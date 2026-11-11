@@ -1,48 +1,68 @@
-# Release: pushing a version tag like v0.3.0 builds MoorePCMechanic.exe on
-# GitHub's Windows machines and posts it as a Release. The app's
-# "Check for updates" button downloads from the newest Release.
+# Release: whenever main gets a new <Version> in MoorePCMechanic.csproj,
+# GitHub builds MoorePCMechanic.exe on Windows and posts it as a Release
+# (tag vX.Y.Z). The app's "Check for updates" button downloads from the
+# newest Release. Pushes that don't change the version are skipped.
 name: Release
 
 on:
   push:
-    tags: [ 'v*' ]
+    branches: [ main ]
+  workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: windows-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Read version from tag
+      - name: Read version and see if it's already released
         id: ver
         shell: pwsh
         run: |
-          $tag = "${{ github.ref_name }}"
-          $ver = $tag.TrimStart('v').Split('-')[0]
+          [xml]$proj = Get-Content MoorePCMechanic/MoorePCMechanic.csproj
+          $ver = ($proj.Project.PropertyGroup | ForEach-Object { $_.Version } | Where-Object { $_ } | Select-Object -First 1).Trim()
           "version=$ver" >> $env:GITHUB_OUTPUT
+          gh release view "v$ver" *> $null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "v$ver is already released - nothing to do."
+            "skip=true" >> $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "Releasing v$ver"
+            "skip=false" >> $env:GITHUB_OUTPUT
+          }
+          exit 0
+
+      - uses: actions/setup-dotnet@v4
+        if: steps.ver.outputs.skip == 'false'
+        with:
+          dotnet-version: '8.0.x'
 
       - name: Publish single-file exe
+        if: steps.ver.outputs.skip == 'false'
         # Same settings as Build-Exe.bat / Visual Studio's FolderProfile, just a different output folder
         run: >
           dotnet publish MoorePCMechanic/MoorePCMechanic.csproj
           -p:PublishProfile=FolderProfile
           -p:PublishDir=${{ github.workspace }}/out/
-          -p:Version=${{ steps.ver.outputs.version }}
 
       - name: Fingerprint (SHA-256) for the updater's safety check
+        if: steps.ver.outputs.skip == 'false'
         shell: pwsh
         run: |
           $h = (Get-FileHash out/MoorePCMechanic.exe -Algorithm SHA256).Hash.ToLower()
           "$h  MoorePCMechanic.exe" | Out-File -Encoding ascii out/MoorePCMechanic.exe.sha256
 
       - name: Release notes from CHANGELOG.md
+        if: steps.ver.outputs.skip == 'false'
         shell: pwsh
         run: |
           $ver = "${{ steps.ver.outputs.version }}"
@@ -56,10 +76,10 @@ jobs:
           $notes -join "`n" | Out-File -Encoding utf8 notes.md
 
       - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
+        if: steps.ver.outputs.skip == 'false'
         run: >
-          gh release create "${{ github.ref_name }}"
+          gh release create "v${{ steps.ver.outputs.version }}"
           out/MoorePCMechanic.exe out/MoorePCMechanic.exe.sha256
+          --target "${{ github.sha }}"
           --title "Moore PC Mechanic ${{ steps.ver.outputs.version }}"
           --notes-file notes.md

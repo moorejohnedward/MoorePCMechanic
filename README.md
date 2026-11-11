@@ -15,7 +15,7 @@ Run it, then click **Restart as admin** (top right) to unlock temperatures, fan 
 
 After the first install, you never need to rebuild for an upgrade. Click **Check for updates** in the top bar (the app also checks quietly each time it starts and shows a banner when a new version is out). It downloads the new version from this project's GitHub Releases, checks its SHA-256 fingerprint, swaps itself and restarts.
 
-**How a new version gets published:** add an entry at the top of `CHANGELOG.md` (`## v0.3.0 - date`), bump `<Version>` in the .csproj, commit, then push a tag (`git tag v0.3.0` then `git push origin v0.3.0`). GitHub Actions builds the .exe on Windows and posts the Release; the changelog entry becomes the "What's new" text in the app.
+**How a new version gets published:** add an entry at the top of `CHANGELOG.md` (`## v0.3.0 - date`), raise `<Version>` in `MoorePCMechanic/MoorePCMechanic.csproj` to match, commit and push to `main`. GitHub Actions sees the new version number, builds the .exe on Windows and posts the Release; the changelog entry becomes the "What's new" text in the app.
 
 School/progress record: `DEVLOG.md` and the commit history.
 

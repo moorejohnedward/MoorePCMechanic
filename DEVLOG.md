@@ -31,7 +31,7 @@ Each entry records what was built, why, and the concepts behind it. The Git comm
 - **Integrity check:** each release includes a SHA-256 fingerprint. The updater refuses to install a download that doesn't match it.
 - **GitHub repository + automated builds (CI/CD):**
   - `build.yml` compiles the app on GitHub's Windows servers on every push, so errors are caught before release.
-  - `release.yml`: when a version tag is pushed (for example `v0.2.0`), GitHub builds the .exe, attaches its fingerprint and publishes a Release with notes pulled from CHANGELOG.md.
+  - `release.yml`: when the version number in the project file goes up (for example to 0.2.0), GitHub builds the .exe, attaches its fingerprint and publishes a Release (tag v0.2.0) with notes pulled from CHANGELOG.md.
 
 **Concepts:** version control with Git, semantic versioning (major.minor.patch), continuous integration and delivery (GitHub Actions), REST APIs (GitHub Releases API, JSON parsing), async downloads with progress reporting, cryptographic hashing for integrity.
 
