@@ -1,0 +1,6 @@
+bin/
+obj/
+.vs/
+*.user
+Release (app to run and share)/
+out/
