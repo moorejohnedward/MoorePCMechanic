@@ -1,0 +1,22 @@
+# Build check: runs on every push so compile errors are caught on GitHub,
+# not on John's PC. Nothing is released here.
+name: Build check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build
+        run: dotnet build MoorePCMechanic/MoorePCMechanic.csproj -c Release

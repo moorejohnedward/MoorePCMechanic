@@ -1,0 +1,65 @@
+# Release: pushing a version tag like v0.3.0 builds MoorePCMechanic.exe on
+# GitHub's Windows machines and posts it as a Release. The app's
+# "Check for updates" button downloads from the newest Release.
+name: Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Read version from tag
+        id: ver
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $ver = $tag.TrimStart('v').Split('-')[0]
+          "version=$ver" >> $env:GITHUB_OUTPUT
+
+      - name: Publish single-file exe
+        # Same settings as Build-Exe.bat / Visual Studio's FolderProfile, just a different output folder
+        run: >
+          dotnet publish MoorePCMechanic/MoorePCMechanic.csproj
+          -p:PublishProfile=FolderProfile
+          -p:PublishDir=${{ github.workspace }}/out/
+          -p:Version=${{ steps.ver.outputs.version }}
+
+      - name: Fingerprint (SHA-256) for the updater's safety check
+        shell: pwsh
+        run: |
+          $h = (Get-FileHash out/MoorePCMechanic.exe -Algorithm SHA256).Hash.ToLower()
+          "$h  MoorePCMechanic.exe" | Out-File -Encoding ascii out/MoorePCMechanic.exe.sha256
+
+      - name: Release notes from CHANGELOG.md
+        shell: pwsh
+        run: |
+          $ver = "${{ steps.ver.outputs.version }}"
+          $lines = Get-Content CHANGELOG.md
+          $start = ($lines | Select-String -Pattern "^##\s+\[?v?$([regex]::Escape($ver))\b" | Select-Object -First 1).LineNumber
+          if ($start) {
+            $rest = $lines[$start..($lines.Count - 1)]
+            $end = ($rest | Select-String -Pattern '^##\s' | Select-Object -First 1).LineNumber
+            $notes = if ($end -gt 1) { $rest[0..($end - 2)] } elseif ($end -eq 1) { @("Version $ver") } else { $rest }
+          } else { $notes = @("Version $ver") }
+          $notes -join "`n" | Out-File -Encoding utf8 notes.md
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "${{ github.ref_name }}"
+          out/MoorePCMechanic.exe out/MoorePCMechanic.exe.sha256
+          --title "Moore PC Mechanic ${{ steps.ver.outputs.version }}"
+          --notes-file notes.md

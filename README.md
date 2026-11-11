@@ -11,6 +11,14 @@ For the shareable exe: right-click the project > **Publish** > **FolderProfile**
 
 Run it, then click **Restart as admin** (top right) to unlock temperatures, fan speeds, voltages and drive health.
 
+## Updates
+
+After the first install, you never need to rebuild for an upgrade. Click **Check for updates** in the top bar (the app also checks quietly each time it starts and shows a banner when a new version is out). It downloads the new version from this project's GitHub Releases, checks its SHA-256 fingerprint, swaps itself and restarts.
+
+**How a new version gets published:** add an entry at the top of `CHANGELOG.md` (`## v0.3.0 - date`), bump `<Version>` in the .csproj, commit, then push a tag (`git tag v0.3.0` then `git push origin v0.3.0`). GitHub Actions builds the .exe on Windows and posts the Release; the changelog entry becomes the "What's new" text in the app.
+
+School/progress record: `DEVLOG.md` and the commit history.
+
 ## What's in Phase 1 (v0.1)
 
 - **Overview** - live tiles for CPU, GPU, video memory, system memory and the hottest drive, plus a full hardware inventory: exact CPU, motherboard and BIOS, every RAM stick with slot, part number and speed, GPU with VRAM and driver version, drives with health and free space, USB controllers (shows add-in cards), network.

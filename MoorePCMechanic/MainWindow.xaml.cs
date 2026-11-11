@@ -57,7 +57,10 @@ public partial class MainWindow : Window
         AdminText.Text = admin ? "● Admin mode - all sensors" : "● Limited mode";
         AdminText.Foreground = (Brush)FindResource(admin ? "GoodBrush" : "TipBrush");
         BtnElevate.Visibility = admin ? Visibility.Collapsed : Visibility.Visible;
-        SubtitleText.Text = $"{Environment.MachineName}  ·  v0.1 (Phase 1: inventory + live monitor)";
+        SubtitleText.Text = $"{Environment.MachineName}  ·  v{UpdateService.CurrentVersion}";
+
+        if (Environment.GetCommandLineArgs().Contains("--updated"))
+            StatusText.Text = $"Updated to version {UpdateService.CurrentVersion}.";
     }
 
     // =====================================================================
@@ -67,8 +70,43 @@ public partial class MainWindow : Window
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
         _loop = Task.Run(() => SensorLoop(_cts.Token));
+        _ = CheckForUpdateQuietlyAsync();
         await RunInventoryAsync();
     }
+
+    // =====================================================================
+    //  Updates
+    // =====================================================================
+
+    private UpdateInfo? _pendingUpdate;
+
+    /// <summary>Startup check: shows the banner if a newer version is out. Silent if offline.</summary>
+    private async Task CheckForUpdateQuietlyAsync()
+    {
+        if (!UpdateService.CheckOnStartup) return;
+        try
+        {
+            await Task.Delay(3000); // let the dashboard load first
+            var info = await UpdateService.CheckAsync();
+            if (info is null || UpdateService.IsSkipped(info)) return;
+            _pendingUpdate = info;
+            UpdateBannerText.Text = $"Version {info.Version} is ready (you have {UpdateService.CurrentVersion}). Updating takes about a minute and restarts the app.";
+            UpdateBanner.Visibility = Visibility.Visible;
+        }
+        catch { /* no internet or GitHub unreachable: try again next launch */ }
+    }
+
+    private void BtnUpdates_Click(object sender, RoutedEventArgs e) =>
+        new UpdateWindow(null) { Owner = this }.ShowDialog();
+
+    private void BtnShowUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        UpdateBanner.Visibility = Visibility.Collapsed;
+        new UpdateWindow(_pendingUpdate) { Owner = this }.ShowDialog();
+    }
+
+    private void BtnDismissUpdate_Click(object sender, RoutedEventArgs e) =>
+        UpdateBanner.Visibility = Visibility.Collapsed;
 
     private void Window_Closing(object? sender, CancelEventArgs e)
     {

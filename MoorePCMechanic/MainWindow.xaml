@@ -99,6 +99,7 @@
     <Grid Margin="20,14,20,10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -118,6 +119,13 @@
                 <TextBlock x:Name="SubtitleText" Foreground="{StaticResource MutedBrush}" Text="Checking your machine…"/>
             </StackPanel>
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="BtnUpdates" Style="{StaticResource GhostButton}" Click="BtnUpdates_Click" Margin="0,0,10,0"
+                        ToolTip="See if a newer version of Moore PC Mechanic is available">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE895;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="Check for updates"/>
+                    </StackPanel>
+                </Button>
                 <Border x:Name="AdminPill" CornerRadius="12" Padding="10,4" Margin="0,0,10,0" Background="{StaticResource PanelAltBrush}">
                     <TextBlock x:Name="AdminText" FontSize="12"/>
                 </Border>
@@ -131,8 +139,24 @@
             </StackPanel>
         </Grid>
 
+        <!-- ================= Update banner (hidden until an update is found) ================= -->
+        <Border Grid.Row="1" x:Name="UpdateBanner" Visibility="Collapsed" Margin="0,0,0,12" Padding="14,10"
+                CornerRadius="8" Background="{StaticResource PanelAltBrush}"
+                BorderBrush="{StaticResource AccentBrush}" BorderThickness="4,0,0,0">
+            <DockPanel LastChildFill="True">
+                <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Margin="8,0,0,0"
+                        Click="BtnDismissUpdate_Click" Content="Not now"/>
+                <Button DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Margin="8,0,0,0"
+                        Click="BtnShowUpdate_Click" Content="See what's new &amp; update"/>
+                <TextBlock Text="&#xE895;" FontFamily="{StaticResource IconFont}" FontSize="16"
+                           Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock x:Name="UpdateBannerText" VerticalAlignment="Center" TextWrapping="Wrap"
+                           Text="A new version of Moore PC Mechanic is ready."/>
+            </DockPanel>
+        </Border>
+
         <!-- ================= Tabs ================= -->
-        <TabControl Grid.Row="1" x:Name="Tabs">
+        <TabControl Grid.Row="2" x:Name="Tabs">
 
             <!-- Overview -->
             <TabItem Header="Overview">
@@ -312,6 +336,6 @@
         </TabControl>
 
         <!-- ================= Status bar ================= -->
-        <TextBlock Grid.Row="2" x:Name="StatusText" Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="2,6,0,0"/>
+        <TextBlock Grid.Row="3" x:Name="StatusText" Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="2,6,0,0"/>
     </Grid>
 </Window>

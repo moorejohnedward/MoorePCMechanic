@@ -10,6 +10,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         DispatcherUnhandledException += OnUnhandled;
+        UpdateService.CleanupAfterUpdate(); // remove the previous version left behind by an update
         base.OnStartup(e);
     }
 
