@@ -56,3 +56,5 @@ Each entry records what was built, why, and the concepts behind it. The Git comm
 
 **v0.3.1 (same day):** icon redesigned as a mashup: torque wrench over the original gear and heartbeat line. The drawing script is saved in `tools/make_icon.py`. This small release doubles as a live test of the in-app updater.
 
+**Tested 2026-11-10, 8:13 PM:** first real in-app update on my PC. v0.2.0 found v0.3.1 on GitHub, downloaded and verified it, swapped itself and restarted. The leftover old file was cleaned up automatically. The updater works end to end.
+
