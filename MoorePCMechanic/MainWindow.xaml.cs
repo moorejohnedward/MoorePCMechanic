@@ -59,8 +59,11 @@ public partial class MainWindow : Window
         BtnElevate.Visibility = admin ? Visibility.Collapsed : Visibility.Visible;
         SubtitleText.Text = $"{Environment.MachineName}  ·  v{UpdateService.CurrentVersion}";
 
-        if (Environment.GetCommandLineArgs().Contains("--updated"))
+        var args = Environment.GetCommandLineArgs();
+        if (args.Contains("--updated"))
             StatusText.Text = $"Updated to version {UpdateService.CurrentVersion}.";
+        if (args.Contains("--minimized"))
+            WindowState = WindowState.Minimized; // started with Windows: run quietly on the taskbar
     }
 
     // =====================================================================
@@ -70,6 +73,7 @@ public partial class MainWindow : Window
     private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
         _loop = Task.Run(() => SensorLoop(_cts.Token));
+        InitAudio();
         _ = CheckForUpdateQuietlyAsync();
         await RunInventoryAsync();
     }
@@ -111,6 +115,7 @@ public partial class MainWindow : Window
     private void Window_Closing(object? sender, CancelEventArgs e)
     {
         _closing = true;
+        DisposeAudio();
         _cts.Cancel();
         try { _loop?.Wait(2500); } catch { }
         lock (_logLock)

@@ -36,3 +36,21 @@ Each entry records what was built, why, and the concepts behind it. The Git comm
 **Concepts:** version control with Git, semantic versioning (major.minor.patch), continuous integration and delivery (GitHub Actions), REST APIs (GitHub Releases API, JSON parsing), async downloads with progress reporting, cryptographic hashing for integrity.
 
 **Result:** New versions now reach the app with one click from inside it. No local build needed after this one.
+
+---
+
+## 2026-11-10: v0.3, Audio & calls tab + new icon
+
+**Problem:** During Zoom classes, Windows kept switching away from my wireless headset (Razer Barracuda) to other devices, and the sound cut out. I need reliable audio for school and VA video sessions for the next 20+ weeks, and I'm keeping the wireless headset.
+
+**Built**
+- **Audio Guard** (`Services/AudioService.cs`): listens for Windows' audio device notifications. When the default speaker or mic changes to anything but my chosen headset, it sets the headset back for all three Windows roles (console, multimedia, communications). It backs off for a minute if another program keeps fighting it, so it can't flip-flop forever.
+- **Dropout tracker:** records when the headset disappears and reappears, and for how long. This separates two different problems: Windows switching devices (software) versus the wireless link dropping (radio signal or USB power).
+- **Call-ready check** (`MainWindow.Audio.cs`): opens the mic for 5 seconds to measure real input level, checks defaults, mute, volume and the camera, and offers a one-click fix.
+- **System fixes:** Windows call "ducking" (registry), USB selective suspend (powercfg), per-port USB power saving (WMI, admin).
+- **New icon:** dial torque wrench, drawn with a Python script.
+
+**Concepts:** Windows Core Audio (WASAPI) through the NAudio library, COM interop (calling Windows' IPolicyConfig interface from C#), event-driven programming and thread marshaling to the UI thread, the Windows registry, WMI, partial classes to keep a large window's code organized.
+
+**Delivery:** first version delivered through the in-app updater built in v0.2.
+

@@ -1,5 +1,14 @@
 # Changelog - Moore PC Mechanic
 
+## v0.3.0 - Nov 10, 2026 (Audio & calls)
+- **New "Audio & calls" tab** for Zoom classes and VA video sessions with a wireless headset.
+- **Audio Guard:** pick your headset once; if Windows or another program switches the speaker or mic, the app switches it back within a second and logs what took over.
+- **Dropout tracker:** logs every time the headset's wireless link drops and reconnects, with how long it was gone (also saved to Logs\audio-events.csv).
+- **Call-ready check:** one button tests headset connection, defaults, mute/volume, whether the mic hears you, and the camera. "Fix everything" repairs what it can.
+- **Fixes for cutting out:** stop Windows lowering sound during calls, turn off USB power saving, keep USB ports awake (admin). Each can be undone.
+- Turn unused audio devices on/off from the list; option to start with Windows (minimized) so the guard is always running.
+- **New icon:** a dial torque wrench.
+
 ## v0.2.0 - Nov 10, 2026 (In-app updates)
 - **Updates from inside the app:** new "Check for updates" button, plus a banner at startup when a new version is out. It shows what's new, then downloads, verifies and installs with one click and restarts the app.
 - "Skip this version", "Later", and an on/off switch for the startup check.

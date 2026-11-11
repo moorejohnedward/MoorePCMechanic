@@ -235,6 +235,207 @@
                 </Grid>
             </TabItem>
 
+            <!-- Audio & calls -->
+            <TabItem Header="Audio &amp; calls">
+                <Grid Margin="0,14,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="400"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ===== Left: headset, devices, event log ===== -->
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="12"/>
+                            <RowDefinition Height="200"/>
+                        </Grid.RowDefinitions>
+
+                        <Border Style="{StaticResource Panel}" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,0,0,10">
+                                    <TextBlock Text="&#xE7F6;" FontFamily="{StaticResource IconFont}" FontSize="16"
+                                               Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,9,0"/>
+                                    <TextBlock Text="Audio Guard" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <CheckBox x:Name="GuardCheck" Margin="16,0,0,0" VerticalAlignment="Center"
+                                              Foreground="{StaticResource TextBrush}" Click="GuardCheck_Click"
+                                              Content="Keep my headset as the speaker and mic"/>
+                                    <TextBlock x:Name="GuardStatus" Margin="14,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="1" Text="Speaker" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,12,6"/>
+                                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="SpeakerPick" Margin="0,0,0,6" MaxWidth="520"
+                                          HorizontalAlignment="Left" MinWidth="360" SelectionChanged="DevicePick_Changed"/>
+                                <TextBlock Grid.Row="2" Text="Microphone" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,12,6"/>
+                                <ComboBox Grid.Row="2" Grid.Column="1" x:Name="MicPick" Margin="0,0,0,6" MaxWidth="520"
+                                          HorizontalAlignment="Left" MinWidth="360" SelectionChanged="DevicePick_Changed"/>
+                                <StackPanel Grid.Row="3" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,6,0,0">
+                                    <CheckBox x:Name="StartupCheck" Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"
+                                              Click="StartupCheck_Click"
+                                              Content="Start with Windows (minimized) so the guard is always on"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <Border Grid.Row="1" Style="{StaticResource Panel}" Padding="0">
+                            <DataGrid x:Name="AudioGrid">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Device" Binding="{Binding Name}" Width="*"/>
+                                    <DataGridTextColumn Header="Type" Binding="{Binding KindText}" Width="150"/>
+                                    <DataGridTextColumn Header="Status" Binding="{Binding StateText}" Width="100"/>
+                                    <DataGridTextColumn Header="Default" Binding="{Binding DefaultText}" Width="150"/>
+                                    <DataGridTextColumn Header="" Binding="{Binding RoleText}" Width="100" FontWeight="SemiBold"/>
+                                    <DataGridTemplateColumn Header="Level" Width="90">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ProgressBar Value="{Binding Level, Mode=OneWay}" Maximum="1" Height="6" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="" Width="100">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Style="{StaticResource GhostButton}" Padding="10,3" Margin="0,2,6,2" FontSize="12"
+                                                        Content="{Binding ToggleText}" Tag="{Binding}" Click="BtnToggleDevice_Click">
+                                                    <Button.Visibility>
+                                                        <Binding Path="CanToggle">
+                                                            <Binding.Converter>
+                                                                <BooleanToVisibilityConverter/>
+                                                            </Binding.Converter>
+                                                        </Binding>
+                                                    </Button.Visibility>
+                                                </Button>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Border>
+
+                        <Border Grid.Row="3" Style="{StaticResource Panel}">
+                            <DockPanel>
+                                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8" LastChildFill="False">
+                                    <TextBlock Text="What's happened" FontSize="15" FontWeight="SemiBold" DockPanel.Dock="Left"/>
+                                    <TextBlock x:Name="AudioSummary" Foreground="{StaticResource MutedBrush}" Margin="14,2,0,0" DockPanel.Dock="Left"/>
+                                    <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Padding="10,3" Margin="0"
+                                            Click="BtnOpenLogs_Click" Content="Open log file"/>
+                                </DockPanel>
+                                <ListBox x:Name="AudioEvents" Background="Transparent" BorderThickness="0"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="92"/>
+                                                    <ColumnDefinition Width="60"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding TimeText}" Foreground="{StaticResource MutedBrush}"/>
+                                                <TextBlock x:Name="k" Grid.Column="1" Text="{Binding KindText}" FontSize="11" FontWeight="Bold"
+                                                           Foreground="{StaticResource TipBrush}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding Message}" TextWrapping="Wrap" Foreground="{StaticResource TextBrush}"/>
+                                            </Grid>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding KindText}" Value="FIXED">
+                                                    <Setter TargetName="k" Property="Foreground" Value="{StaticResource GoodBrush}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding KindText}" Value="BACK">
+                                                    <Setter TargetName="k" Property="Foreground" Value="{StaticResource GoodBrush}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding KindText}" Value="DROP">
+                                                    <Setter TargetName="k" Property="Foreground" Value="{StaticResource WarnBrush}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding KindText}" Value="SWITCH">
+                                                    <Setter TargetName="k" Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding KindText}" Value="CHECK">
+                                                    <Setter TargetName="k" Property="Foreground" Value="{StaticResource WarnBrush}"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- ===== Right: call-ready check and fixes ===== -->
+                    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <Border Style="{StaticResource Panel}" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="&#xE714;" FontFamily="{StaticResource IconFont}" FontSize="16"
+                                                   Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,9,0"/>
+                                        <TextBlock Text="Call-ready check" FontSize="15" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                    <TextBlock Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,10"
+                                               Text="Run this a few minutes before a Zoom class or MOVE session. Talk normally while it runs so it can hear your mic."/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <Button x:Name="BtnCallCheck" Style="{StaticResource AccentButton}" Click="BtnCallCheck_Click" Content="Run check"/>
+                                        <Button x:Name="BtnCallFix" Style="{StaticResource GhostButton}" Click="BtnCallFix_Click"
+                                                Content="Fix everything" IsEnabled="False"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="MicTestLabel" Text="Mic level" Foreground="{StaticResource MutedBrush}" FontSize="12"/>
+                                    <ProgressBar x:Name="MicMeter" Maximum="1" Height="10" Margin="0,4,0,12"/>
+                                    <ItemsControl x:Name="CallChecks" ItemTemplate="{StaticResource FindingTemplate}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Panel}">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="&#xE90F;" FontFamily="{StaticResource IconFont}" FontSize="16"
+                                                   Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,9,0"/>
+                                        <TextBlock Text="Fixes for sound cutting out" FontSize="15" FontWeight="SemiBold"/>
+                                    </StackPanel>
+
+                                    <TextBlock Text="Windows turning other sound down during calls" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                    <TextBlock Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,2,0,6"
+                                               Text="By default Windows lowers everything by 80% when it thinks a call started. That can sound like the audio cutting out."/>
+                                    <DockPanel Margin="0,0,0,14">
+                                        <Button x:Name="BtnDucking" DockPanel.Dock="Left" Style="{StaticResource GhostButton}" Padding="10,4" Click="BtnDucking_Click"/>
+                                        <TextBlock x:Name="DuckingStatus" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                    </DockPanel>
+
+                                    <TextBlock Text="USB power saving" FontWeight="SemiBold"/>
+                                    <TextBlock Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,2,0,6"
+                                               Text="Windows can cut power to idle USB devices, including your headset's wireless dongle, for a split second."/>
+                                    <DockPanel Margin="0,0,0,6">
+                                        <Button x:Name="BtnUsbSuspend" DockPanel.Dock="Left" Style="{StaticResource GhostButton}" Padding="10,4" Click="BtnUsbSuspend_Click"/>
+                                        <TextBlock x:Name="UsbSuspendStatus" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                    </DockPanel>
+                                    <DockPanel Margin="0,0,0,14">
+                                        <Button x:Name="BtnUsbPorts" DockPanel.Dock="Left" Style="{StaticResource GhostButton}" Padding="10,4"
+                                                Click="BtnUsbPorts_Click" Content="Keep USB ports awake"/>
+                                        <TextBlock x:Name="UsbPortsStatus" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                    </DockPanel>
+
+                                    <TextBlock Text="Dongle placement (no app can fix this one)" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                    <TextBlock Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,2,0,6"
+                                               Text="If the log shows no DROP lines but you still hear choppy sound, it's the radio signal, not Windows. Use a black USB 2.0 port if you have one (blue USB 3 ports put out 2.4 GHz interference), keep the dongle in front of the case with line of sight to you, and away from the mouse/keyboard receiver and Wi-Fi router. Turn off the headset's Bluetooth during calls."/>
+                                    <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Padding="10,4"
+                                            Click="BtnSoundPanel_Click" Content="Open Windows Sound settings"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
+
             <!-- Live sensors -->
             <TabItem Header="Live sensors">
                 <Grid Margin="0,14,0,0">

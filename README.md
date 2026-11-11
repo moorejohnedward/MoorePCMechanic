@@ -19,6 +19,10 @@ After the first install, you never need to rebuild for an upgrade. Click **Check
 
 School/progress record: `DEVLOG.md` and the commit history.
 
+## Audio & calls (v0.3)
+
+Built for video calls on a wireless headset. **Audio Guard** keeps your chosen headset as the Windows speaker and mic and switches it back if anything changes it. The event log shows device switches and wireless dropouts with times. **Call-ready check** tests everything before a meeting. One-click fixes cover the Windows settings that make sound cut out. Tick **Start with Windows** to keep the guard running all the time.
+
 ## What's in Phase 1 (v0.1)
 
 - **Overview** - live tiles for CPU, GPU, video memory, system memory and the hottest drive, plus a full hardware inventory: exact CPU, motherboard and BIOS, every RAM stick with slot, part number and speed, GPU with VRAM and driver version, drives with health and free space, USB controllers (shows add-in cards), network.

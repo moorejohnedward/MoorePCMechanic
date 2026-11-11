@@ -59,3 +59,26 @@ public sealed class Card : Observable
     private int _heat;
     public int Heat { get => _heat; set => Set(ref _heat, value); }
 }
+
+/// <summary>One row in the Audio & calls device list.</summary>
+public sealed class AudioDeviceRow : Observable
+{
+    public AudioDeviceRow(MoorePCMechanic.Services.AudioDeviceInfo info, bool isPreferred)
+    {
+        Info = info;
+        IsPreferred = isPreferred;
+    }
+
+    public MoorePCMechanic.Services.AudioDeviceInfo Info { get; }
+    public string Name => Info.Name;
+    public string KindText => Info.KindText;
+    public string StateText => Info.StateText;
+    public string DefaultText => Info.DefaultText;
+    public bool IsPreferred { get; }
+    public string RoleText => IsPreferred ? "Your headset" : "";
+    public string ToggleText => Info.IsActive ? "Turn off" : "Turn on";
+    public bool CanToggle => !IsPreferred && Info.State != NAudio.CoreAudioApi.DeviceState.Unplugged;
+
+    private double _level;
+    public double Level { get => _level; set => Set(ref _level, value); }
+}
