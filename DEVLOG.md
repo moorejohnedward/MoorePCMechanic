@@ -54,3 +54,5 @@ Each entry records what was built, why, and the concepts behind it. The Git comm
 
 **Delivery:** first version delivered through the in-app updater built in v0.2.
 
+**v0.3.1 (same day):** icon redesigned as a mashup: torque wrench over the original gear and heartbeat line. The drawing script is saved in `tools/make_icon.py`. This small release doubles as a live test of the in-app updater.
+

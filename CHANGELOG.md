@@ -1,5 +1,8 @@
 # Changelog - Moore PC Mechanic
 
+## v0.3.1 - Nov 10, 2026 (Icon)
+- **New icon mashup:** dial torque wrench in front of the gear, with the heartbeat line underneath.
+
 ## v0.3.0 - Nov 10, 2026 (Audio & calls)
 - **New "Audio & calls" tab** for Zoom classes and VA video sessions with a wireless headset.
 - **Audio Guard:** pick your headset once; if Windows or another program switches the speaker or mic, the app switches it back within a second and logs what took over.
