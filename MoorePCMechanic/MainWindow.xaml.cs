@@ -420,8 +420,9 @@ public partial class MainWindow : Window
         }
         else if (!cpuTemp)
         {
-            _findings.Insert(0, new Finding(FindingLevel.Tip, "CPU temperature not available",
-                "The sensor library needs a small signed driver for CPU temps. If it stays blank, install PawnIO from pawnio.eu, then restart this app."));
+            _findings.Insert(0, new Finding(FindingLevel.Tip, "CPU temperature not available yet",
+                "Reading the processor's temperature needs PawnIO, a small free driver that hardware monitors use. Click \"Turn on CPU temperature\" at the top to install it, then this app restarts."));
+            BtnPawnIO.Visibility = Visibility.Visible;
         }
 
         // Drive wear (SMART "Percentage Used" / life remaining) where the drive reports it

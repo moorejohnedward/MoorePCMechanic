@@ -1,5 +1,9 @@
 # Changelog - Moore PC Mechanic
 
+## v0.4.2 - Nov 11, 2026 (CPU temperature fix)
+- **Fixed: the processor showed 0 °C.** That was a missing reading, not a real temperature. Missing temperatures now show as "—" everywhere (dashboard, Live sensors, benchmark heat check) instead of 0 °C.
+- **New "Turn on CPU temperature" button** (top right, shown only when needed). Reading CPU temperatures requires PawnIO, a free signed driver used by hardware monitors. The button downloads the official installer, checks its digital signature, runs it and restarts the app.
+
 ## v0.4.1 - Nov 11, 2026 (Benchmarks on more than one PC)
 - Each benchmark run now records which PC it ran on, with a new **PC** column in Saved runs. New runs are compared only with the last run from the same PC. Your Documents folder syncs through OneDrive, so runs from your home PC and this one can end up in the same list without getting mixed up.
 

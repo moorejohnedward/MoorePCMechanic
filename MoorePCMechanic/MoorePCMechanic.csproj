@@ -12,7 +12,7 @@
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <Product>Moore PC Mechanic</Product>
     <Company>John Moore</Company>
-    <Version>0.4.1</Version>
+    <Version>0.4.2</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 

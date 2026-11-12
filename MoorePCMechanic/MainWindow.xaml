@@ -119,6 +119,13 @@
                 <TextBlock x:Name="SubtitleText" Foreground="{StaticResource MutedBrush}" Text="Checking your machine…"/>
             </StackPanel>
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="BtnPawnIO" Style="{StaticResource AccentButton}" Click="BtnPawnIO_Click" Margin="0,0,10,0" Visibility="Collapsed"
+                        ToolTip="CPU temperature needs the free PawnIO sensor driver. Downloads the official signed installer and runs it.">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE9CA;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="Turn on CPU temperature"/>
+                    </StackPanel>
+                </Button>
                 <Button x:Name="BtnUpdates" Style="{StaticResource GhostButton}" Click="BtnUpdates_Click" Margin="0,0,10,0"
                         ToolTip="See if a newer version of Moore PC Mechanic is available">
                     <StackPanel Orientation="Horizontal">

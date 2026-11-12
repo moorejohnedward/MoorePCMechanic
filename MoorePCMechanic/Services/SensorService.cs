@@ -69,14 +69,19 @@ public sealed class SensorService : IDisposable
                 RootType = root,
                 Name = s.Name,
                 Type = s.SensorType,
-                Value = s.Value,
-                Min = s.Min,
-                Max = s.Max,
+                // A temperature of 0 °C (or below) means "no reading": the sensor exists but the
+                // library can't read it, usually because the PawnIO driver isn't installed.
+                Value = Real(s.SensorType, s.Value),
+                Min = Real(s.SensorType, s.Min),
+                Max = Real(s.SensorType, s.Max),
             });
         }
         foreach (var sub in hw.SubHardware)
             Collect(sub, root, list);
     }
+
+    private static float? Real(SensorType t, float? v) =>
+        t == SensorType.Temperature && v is float x && (x <= 0.5f || float.IsNaN(x)) ? null : v;
 
     public void ResetMinMax()
     {
