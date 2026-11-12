@@ -4,6 +4,8 @@ name: Smoke test
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ 'v*-dev' ]
 
 jobs:
   smoke:
