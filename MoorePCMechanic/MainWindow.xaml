@@ -517,22 +517,203 @@
                 </Grid>
             </TabItem>
 
-            <!-- Coming next -->
-            <TabItem Header="Benchmarks &amp; upgrades">
-                <Border Style="{StaticResource Panel}" Margin="0,14,0,8" Padding="24">
-                    <StackPanel MaxWidth="760" HorizontalAlignment="Left">
-                        <TextBlock Text="Coming in the next versions" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12"/>
-                        <TextBlock TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" LineHeight="22">
-                            <Run Text="Phase 2 - Health checks &amp; benchmarks:" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold"/>
-                            <LineBreak/>
-                            <Run Text="CPU single/multi-core, memory bandwidth &amp; latency, disk read/write, GPU tests. Every run is saved with a date so you can compare before and after an upgrade (like adding your second RAM stick). Startup-program review, crash/error history, thermal-throttling check."/>
-                            <LineBreak/><LineBreak/>
-                            <Run Text="Phase 3 - Upgrade advisor &amp; driver checker:" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold"/>
-                            <LineBreak/>
-                            <Run Text="Power-supply headroom for a bigger GPU, matching RAM, free M.2 slots, and a list of drivers with their dates and links to the official download pages."/>
-                        </TextBlock>
+            <!-- Drivers -->
+            <TabItem Header="Drivers">
+                <Grid Margin="0,14,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Toolbar -->
+                    <DockPanel Margin="0,0,0,12" LastChildFill="True">
+                        <Button x:Name="BtnDrvScan" DockPanel.Dock="Left" Style="{StaticResource AccentButton}" Click="BtnDrvScan_Click"
+                                ToolTip="List drivers, find problem devices and ask Windows Update and NVIDIA for newer drivers">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE721;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Check for driver updates"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BtnDrvInstall" DockPanel.Dock="Left" Style="{StaticResource AccentButton}" Click="BtnDrvInstall_Click"
+                                IsEnabled="False" ToolTip="Makes a restore point, then downloads and installs the ticked updates">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE896;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock x:Name="BtnDrvInstallText" Text="Download &amp; install"/>
+                            </StackPanel>
+                        </Button>
+                        <StackPanel VerticalAlignment="Center" Margin="8,0,0,0">
+                            <TextBlock x:Name="DrvStatus" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                                       Text="Click &quot;Check for driver updates&quot;. Windows Update can take a minute or two to answer."/>
+                            <ProgressBar x:Name="DrvProgress" Margin="0,6,0,0" Visibility="Collapsed" IsIndeterminate="True" MaxWidth="420" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- NVIDIA + problem devices -->
+                    <StackPanel Grid.Row="1">
+                        <Border x:Name="NvPanel" Style="{StaticResource Panel}" Margin="0,0,0,12" Visibility="Collapsed">
+                            <DockPanel LastChildFill="True">
+                                <Button x:Name="BtnNvInstall" DockPanel.Dock="Right" Style="{StaticResource AccentButton}" Margin="12,0,0,0"
+                                        Click="BtnNvInstall_Click" VerticalAlignment="Center" Visibility="Collapsed"
+                                        ToolTip="Downloads NVIDIA's driver, checks NVIDIA's digital signature, makes a restore point and installs it. Screens flicker for a moment.">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE896;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock x:Name="BtnNvInstallText" Text="Download &amp; install"/>
+                                    </StackPanel>
+                                </Button>
+                                <TextBlock Text="&#xE7F4;" FontFamily="{StaticResource IconFont}" FontSize="20" Foreground="{StaticResource GoodBrush}"
+                                           VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock x:Name="NvTitle" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                    <TextBlock x:Name="NvDetail" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                    <ProgressBar x:Name="NvProgress" Margin="0,8,0,0" Visibility="Collapsed" Maximum="1" MaxWidth="420" HorizontalAlignment="Left"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <ItemsControl x:Name="DrvProblems" ItemTemplate="{StaticResource FindingTemplate}"/>
                     </StackPanel>
-                </Border>
+
+                    <!-- Updates (top) and all installed drivers (bottom) -->
+                    <Grid Grid.Row="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Border x:Name="WuPanel" Style="{StaticResource Panel}" Padding="0" Margin="0,0,0,12" Visibility="Collapsed" MaxHeight="260">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" Margin="14,12,14,6" FontSize="15" FontWeight="SemiBold"
+                                           Text="Driver updates from Windows Update (tick the ones to install)"/>
+                                <DataGrid x:Name="WuGrid" IsReadOnly="False" CanUserAddRows="False">
+                                    <DataGrid.Columns>
+                                        <DataGridCheckBoxColumn Header="Install" Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="70"/>
+                                        <DataGridTextColumn Header="Update" Binding="{Binding Title}" Width="*" IsReadOnly="True"/>
+                                        <DataGridTextColumn Header="Kind" Binding="{Binding ClassName}" Width="130" IsReadOnly="True"/>
+                                        <DataGridTextColumn Header="Date" Binding="{Binding DateText}" Width="100" IsReadOnly="True"/>
+                                        <DataGridTextColumn Header="Size" Binding="{Binding SizeText}" Width="90" IsReadOnly="True"/>
+                                        <DataGridTextColumn Header="Result" Binding="{Binding Result}" Width="190" IsReadOnly="True" FontWeight="SemiBold"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </DockPanel>
+                        </Border>
+                        <Border Grid.Row="1" Style="{StaticResource Panel}" Padding="0" Margin="0,0,0,8">
+                            <DockPanel>
+                                <DockPanel DockPanel.Dock="Top" Margin="14,12,14,8" LastChildFill="False">
+                                    <TextBlock Text="Installed drivers" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="DrvCount" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                    <CheckBox x:Name="DrvHideMs" DockPanel.Dock="Right" Content="Hide Microsoft's built-in drivers" IsChecked="True"
+                                              Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" Margin="12,0,0,0"
+                                              Checked="DrvFilter_Changed" Unchecked="DrvFilter_Changed"/>
+                                    <TextBox x:Name="DrvSearch" DockPanel.Dock="Right" Style="{StaticResource SearchBox}" Width="220"
+                                             TextChanged="DrvFilter_Changed" ToolTip="Filter by device, kind or maker"/>
+                                </DockPanel>
+                                <DataGrid x:Name="DrvGrid">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Device" Binding="{Binding Device}" Width="*"/>
+                                        <DataGridTextColumn Header="Kind" Binding="{Binding ClassName}" Width="140"/>
+                                        <DataGridTextColumn Header="Maker" Binding="{Binding Provider}" Width="170"/>
+                                        <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="140"/>
+                                        <DataGridTextColumn Header="Date" Binding="{Binding DateText}" Width="100"/>
+                                        <DataGridTextColumn Header="Age" Binding="{Binding AgeText}" Width="110"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- Benchmarks -->
+            <TabItem Header="Benchmarks">
+                <Grid Margin="0,14,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Setup -->
+                    <Border Style="{StaticResource Panel}" Margin="0,0,0,12">
+                        <StackPanel>
+                            <WrapPanel>
+                                <CheckBox x:Name="BmCpu" Content="Processor" IsChecked="True" Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" Margin="0,0,18,0"/>
+                                <CheckBox x:Name="BmMem" Content="Memory" IsChecked="True" Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" Margin="0,0,18,0"/>
+                                <CheckBox x:Name="BmGpu" Content="Graphics card" IsChecked="True" Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" Margin="0,0,18,0"/>
+                                <CheckBox x:Name="BmDisk" Content="Drive" IsChecked="True" Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <ComboBox x:Name="BmDrive" Width="240" VerticalAlignment="Center" Margin="0,0,18,0" DisplayMemberPath="Text"/>
+                                <TextBox x:Name="BmLabel" Style="{StaticResource SearchBox}" Width="300" VerticalAlignment="Center" Margin="0,0,12,0"
+                                         ToolTip="A name for this run, e.g. &quot;Before RAM upgrade&quot; or &quot;New 5070 Ti&quot;"/>
+                                <Button x:Name="BtnBmRun" Style="{StaticResource AccentButton}" Click="BtnBmRun_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE768;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="Run benchmarks"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="BtnBmStop" Style="{StaticResource GhostButton}" Click="BtnBmStop_Click" Content="Stop" IsEnabled="False"/>
+                            </WrapPanel>
+                            <TextBlock x:Name="BmStatus" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,10,0,0"
+                                       Text="Takes about 1-2 minutes. Close games and big downloads first so they don't skew the numbers. Name the run (box above) so you can find it later."/>
+                            <ProgressBar x:Name="BmProgress" Maximum="1" Margin="0,8,0,0" Visibility="Collapsed"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Results -->
+                    <Border Grid.Row="1" Style="{StaticResource Panel}" Margin="0,0,0,12" x:Name="BmResultsPanel" Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock x:Name="BmResultsTitle" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                            <ItemsControl x:Name="BmLines" Grid.IsSharedSizeScope="True">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,3" ToolTip="{Binding Hint}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" SharedSizeGroup="T"/>
+                                                <ColumnDefinition Width="Auto" SharedSizeGroup="N"/>
+                                                <ColumnDefinition Width="Auto" SharedSizeGroup="B"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Test}" Foreground="{StaticResource MutedBrush}" Margin="0,0,24,0"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Now}" FontWeight="SemiBold" Margin="0,0,24,0"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Before, StringFormat=was {0}}" Foreground="{StaticResource MutedBrush}" Margin="0,0,24,0"/>
+                                            <TextBlock Grid.Column="3" x:Name="chg" Text="{Binding Change}" FontWeight="SemiBold"/>
+                                        </Grid>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding Better}" Value="1">
+                                                <Setter TargetName="chg" Property="Foreground" Value="{StaticResource GoodBrush}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Better}" Value="-1">
+                                                <Setter TargetName="chg" Property="Foreground" Value="{StaticResource WarnBrush}"/>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock x:Name="BmNotes" Foreground="{StaticResource TipBrush}" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- History -->
+                    <Border Grid.Row="2" Style="{StaticResource Panel}" Padding="0" Margin="0,0,0,8">
+                        <DockPanel>
+                            <DockPanel DockPanel.Dock="Top" Margin="14,12,14,8" LastChildFill="False">
+                                <TextBlock Text="Saved runs" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock Text="Pick two runs (Ctrl+click) to compare them, or one to compare with the run before it." Foreground="{StaticResource MutedBrush}"
+                                           VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Margin="8,0,0,0" Content="Open folder" Click="BtnBmFolder_Click"/>
+                                <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Margin="8,0,0,0" Content="Delete" Click="BtnBmDelete_Click"/>
+                            </DockPanel>
+                            <DataGrid x:Name="BmHistory" SelectionMode="Extended" SelectionChanged="BmHistory_SelectionChanged">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="When" Binding="{Binding DateText}" Width="130"/>
+                                    <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="*"/>
+                                    <DataGridTextColumn Header="CPU 1 core" Binding="{Binding CpuSingleText}" Width="100"/>
+                                    <DataGridTextColumn Header="CPU all" Binding="{Binding CpuMultiText}" Width="100"/>
+                                    <DataGridTextColumn Header="Memory" Binding="{Binding MemReadText}" Width="110"/>
+                                    <DataGridTextColumn Header="Drive read" Binding="{Binding DiskReadText}" Width="110"/>
+                                    <DataGridTextColumn Header="Graphics" Binding="{Binding GpuText}" Width="120"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </Border>
+                </Grid>
             </TabItem>
         </TabControl>
 
