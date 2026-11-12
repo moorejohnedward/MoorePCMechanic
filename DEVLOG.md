@@ -87,3 +87,9 @@ All three were fixed. The NVIDIA lookup returned the current driver (621.14) for
 **Concepts:** COM automation and late binding, WMI, System Restore, digital signatures (Authenticode), REST/XML/JSON parsing, multithreading with `Parallel.For` and atomics, SIMD (`Vector<T>`), unmanaged aligned memory and `unsafe` pointers, unbuffered file I/O, GPU compute shaders (Direct3D 11, HLSL), measurement design (warm-ups, best-of-N, defeating caches and compression), automated testing in CI.
 
 ---
+
+**v0.4.2 and v0.4.3 (same evening): two real-world bugs**
+- *0 °C processor:* LibreHardwareMonitor reports 0 for CPU temperature sensors it can't read (the PawnIO driver wasn't installed). Impossible temperatures are now treated as "no reading", and a "Turn on CPU temperature" button installs PawnIO after checking its signature.
+- *"Windows blocked the update" in admin mode:* the update folder still held `MoorePCMechanic.exe.old` from the previous update. A second copy of the app (started minimized with Windows for Audio Guard) was still running from that old file, so Windows wouldn't let it be deleted. Renaming a running .exe is allowed, but deleting one is not. Fix: if the old file is locked, the updater moves the current version to a uniquely named `.old-<timestamp>` file. Cleanup removes every `.old*` file it can, and a freshly updated copy closes older copies still running. Lesson: in-place self-update has to assume more than one copy of the app may be running.
+
+---

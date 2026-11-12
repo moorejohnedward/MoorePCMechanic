@@ -1,5 +1,8 @@
 # Changelog - Moore PC Mechanic
 
+## v0.4.3 - Nov 11, 2026 (Updater fix)
+- **Fixed: "Windows blocked the update in this folder" even in admin mode.** A second, older copy of the app was still running (the one that starts minimized with Windows for Audio Guard). It kept the previous version's file locked, so the updater couldn't clear it. The updater now works around a locked old file, and after updating it closes any older copies still running.
+
 ## v0.4.2 - Nov 11, 2026 (CPU temperature fix)
 - **Fixed: the processor showed 0 °C.** That was a missing reading, not a real temperature. Missing temperatures now show as "—" everywhere (dashboard, Live sensors, benchmark heat check) instead of 0 °C.
 - **New "Turn on CPU temperature" button** (top right, shown only when needed). Reading CPU temperatures requires PawnIO, a free signed driver used by hardware monitors. The button downloads the official installer, checks its digital signature, runs it and restarts the app.

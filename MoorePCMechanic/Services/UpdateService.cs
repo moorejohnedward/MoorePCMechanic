@@ -69,13 +69,36 @@ public static class UpdateService
     /// <summary>Call once at startup: removes the old .exe left behind by the last update.</summary>
     public static void CleanupAfterUpdate()
     {
-        var old = CurrentExePath + ".old";
-        for (int i = 0; i < 10 && File.Exists(old); i++)
+        var exe = CurrentExePath;
+        var dir = Path.GetDirectoryName(exe)!;
+        var name = Path.GetFileName(exe);
+        // "<name>.old" plus any "<name>.old-…" left when an old copy was still running during an update
+        foreach (var old in Directory.EnumerateFiles(dir, name + ".old*"))
         {
-            try { File.Delete(old); }
-            catch { Thread.Sleep(300); } // previous copy may still be closing
+            for (int i = 0; i < 10 && File.Exists(old); i++)
+            {
+                try { File.Delete(old); }
+                catch { Thread.Sleep(300); } // previous copy may still be closing; if it's still running, try next launch
+            }
         }
-        try { File.Delete(CurrentExePath + ".new"); } catch { }
+        try { File.Delete(exe + ".new"); } catch { }
+    }
+
+    /// <summary>
+    /// After an update, older copies may still be running (for example the one that starts minimized with
+    /// Windows for Audio Guard). They hold the old .exe open, so close them; this new copy takes over.
+    /// </summary>
+    public static void CloseOtherCopies()
+    {
+        var me = Process.GetCurrentProcess();
+        foreach (var p in Process.GetProcessesByName(me.ProcessName))
+        {
+            using (p)
+            {
+                if (p.Id == me.Id) continue;
+                try { p.CloseMainWindow(); if (!p.WaitForExit(3000)) p.Kill(); } catch { }
+            }
+        }
     }
 
     /// <summary>Returns the newest release if it's newer than this copy, otherwise null.</summary>
@@ -161,8 +184,13 @@ public static class UpdateService
             }
         }
 
-        // 3) Swap: rename running exe out of the way, move new one in
-        if (File.Exists(oldFile)) File.Delete(oldFile);
+        // 3) Swap: rename running exe out of the way, move new one in.
+        //    If an old copy from the last update is still running, its file can't be deleted: use a new name instead.
+        if (File.Exists(oldFile))
+        {
+            try { File.Delete(oldFile); }
+            catch { oldFile = exe + ".old-" + DateTime.Now.ToString("yyyyMMddHHmmss"); }
+        }
         File.Move(exe, oldFile);
         try
         {
