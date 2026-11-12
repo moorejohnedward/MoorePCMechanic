@@ -703,6 +703,7 @@
                             <DataGrid x:Name="BmHistory" SelectionMode="Extended" SelectionChanged="BmHistory_SelectionChanged">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="When" Binding="{Binding DateText}" Width="130"/>
+                                    <DataGridTextColumn Header="PC" Binding="{Binding Machine}" Width="140"/>
                                     <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="*"/>
                                     <DataGridTextColumn Header="CPU 1 core" Binding="{Binding CpuSingleText}" Width="100"/>
                                     <DataGridTextColumn Header="CPU all" Binding="{Binding CpuMultiText}" Width="100"/>

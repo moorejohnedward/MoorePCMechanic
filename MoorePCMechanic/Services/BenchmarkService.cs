@@ -18,6 +18,9 @@ public sealed class BenchmarkRun
     public DateTime Date { get; set; } = DateTime.Now;
     public string Label { get; set; } = "";
     public string AppVersion { get; set; } = "";
+    /// <summary>Which PC ran it (Documents can sync between PCs through OneDrive, so runs from several PCs can share one file).</summary>
+    public string Machine { get; set; } = "";
+    public bool IsThisPc => string.IsNullOrEmpty(Machine) || Machine.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
 
     // what the PC was when it ran
     public string Cpu { get; set; } = "";
@@ -156,7 +159,7 @@ public static class BenchmarkService
     public static BenchmarkRun Run(BenchmarkOptions o, Func<(float? Temp, float? Clock)> sampleCpu,
                                    IProgress<(double Fraction, string Text)> progress, CancellationToken ct)
     {
-        var run = new BenchmarkRun { Label = o.Label, AppVersion = UpdateService.CurrentVersion.ToString(), CpuThreads = Environment.ProcessorCount };
+        var run = new BenchmarkRun { Label = o.Label, AppVersion = UpdateService.CurrentVersion.ToString(), Machine = Environment.MachineName, CpuThreads = Environment.ProcessorCount };
         var steps = new List<(string Name, double Weight, Action Act)>();
 
         if (o.Cpu)

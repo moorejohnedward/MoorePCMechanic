@@ -1,5 +1,8 @@
 # Changelog - Moore PC Mechanic
 
+## v0.4.1 - Nov 11, 2026 (Benchmarks on more than one PC)
+- Each benchmark run now records which PC it ran on, with a new **PC** column in Saved runs. New runs are compared only with the last run from the same PC. Your Documents folder syncs through OneDrive, so runs from your home PC and this one can end up in the same list without getting mixed up.
+
 ## v0.4.0 - Nov 11, 2026 (Drivers & Benchmarks)
 - **New Drivers tab.** One button checks for driver updates, then one more downloads and installs them.
   - **Windows Update drivers:** lists the driver updates Windows Update has for this PC. Tick the ones you want and click **Download & install**. A System Restore point is made first so it can be undone.

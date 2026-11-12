@@ -68,7 +68,7 @@ public partial class MainWindow
                 return r;
             });
             if (string.IsNullOrEmpty(run.Label)) run.Label = "Run " + run.Date.ToString("MMM d");
-            var previous = _bmHistory.OrderByDescending(r => r.Date).FirstOrDefault();
+            var previous = _bmHistory.Where(r => r.IsThisPc).OrderByDescending(r => r.Date).FirstOrDefault(); // compare with this PC's last run
             _bmHistory.Add(run);
             BenchmarkService.SaveHistory(_bmHistory);
             ShowBmHistory();
@@ -103,8 +103,8 @@ public partial class MainWindow
     {
         BmResultsPanel.Visibility = Visibility.Visible;
         BmResultsTitle.Text = before == null
-            ? $"{now.Label}  ({now.DateText})"
-            : $"{now.Label}  ({now.DateText})   compared with   {before.Label}  ({before.DateText})";
+            ? $"{now.Label}  ({Where(now)}{now.DateText})"
+            : $"{now.Label}  ({Where(now)}{now.DateText})   compared with   {before.Label}  ({Where(before)}{before.DateText})";
         BmLines.ItemsSource = BenchmarkService.Compare(now, before);
         var notes = new List<string>();
         if (now.MaxCpuTemp is double t) notes.Add($"Hottest processor temperature during the all-core test: {t:0} °C.");
@@ -114,12 +114,16 @@ public partial class MainWindow
         BmNotes.Text = string.Join("  ", notes);
     }
 
+    private static string Where(BenchmarkRun r) => string.IsNullOrEmpty(r.Machine) ? "" : r.Machine + ", ";
+
     private void BmHistory_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         var picked = BmHistory.SelectedItems.Cast<BenchmarkRun>().OrderByDescending(r => r.Date).ToList();
         if (picked.Count == 0) return;
         var now = picked[0];
-        var before = picked.Count >= 2 ? picked[1] : _bmHistory.Where(r => r.Date < now.Date).OrderByDescending(r => r.Date).FirstOrDefault();
+        var before = picked.Count >= 2 ? picked[1]
+            : _bmHistory.Where(r => r.Date < now.Date && string.Equals(r.Machine, now.Machine, StringComparison.OrdinalIgnoreCase))
+                        .OrderByDescending(r => r.Date).FirstOrDefault();
         ShowBmResults(now, before);
     }
 
