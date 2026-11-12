@@ -93,3 +93,7 @@ All three were fixed. The NVIDIA lookup returned the current driver (621.14) for
 - *"Windows blocked the update" in admin mode:* the update folder still held `MoorePCMechanic.exe.old` from the previous update. A second copy of the app (started minimized with Windows for Audio Guard) was still running from that old file, so Windows wouldn't let it be deleted. Renaming a running .exe is allowed, but deleting one is not. Fix: if the old file is locked, the updater moves the current version to a uniquely named `.old-<timestamp>` file. Cleanup removes every `.old*` file it can, and a freshly updated copy closes older copies still running. Lesson: in-place self-update has to assume more than one copy of the app may be running.
 
 ---
+
+**v0.4.4: temperature units.** Added °F and K alongside °C (`Services/Temp.cs`). Sensors always report Celsius, so values stay in °C internally (warning thresholds, saved benchmark data) and are converted only for display: °F = °C × 9/5 + 32 and K = °C + 273.15. All display code goes through one formatter, so a single setting changes every screen, and the choice is saved in the user's AppData. Concepts: separating data from presentation, unit conversion, persisted user preferences.
+
+---

@@ -300,7 +300,7 @@ public static class BenchmarkService
                 run.Notes = (run.Notes + $" The processor slowed from {run.ClockStartMHz:0} to {run.ClockEndMHz:0} MHz under full load, a sign of heat or power limits (throttling).").Trim();
         }
         if (run.MaxCpuTemp >= 95)
-            run.Notes = (run.Notes + $" The processor reached {run.MaxCpuTemp:0} °C. Check the cooler, fans and case airflow.").Trim();
+            run.Notes = (run.Notes + $" The processor reached {Temp.Full(run.MaxCpuTemp.Value, "0")}. Check the cooler, fans and case airflow.").Trim();
     }
 
     // ---------------------------------------------------------------------

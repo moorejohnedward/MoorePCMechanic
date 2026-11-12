@@ -58,6 +58,7 @@ public partial class MainWindow : Window
         AdminText.Foreground = (Brush)FindResource(admin ? "GoodBrush" : "TipBrush");
         BtnElevate.Visibility = admin ? Visibility.Collapsed : Visibility.Visible;
         SubtitleText.Text = $"{Environment.MachineName}  ·  v{UpdateService.CurrentVersion}";
+        TempUnitPick.SelectedIndex = (int)Temp.Unit;
 
         var args = Environment.GetCommandLineArgs();
         if (args.Contains("--updated"))
@@ -196,6 +197,13 @@ public partial class MainWindow : Window
 
     private void BtnOpenData_Click(object sender, RoutedEventArgs e) => AppEnv.OpenFolder(AppEnv.DataFolder);
 
+    /// <summary>°C / °F / K / all three. Cards and tables pick it up on the next refresh (every second).</summary>
+    private void TempUnitPick_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (TempUnitPick.SelectedIndex < 0) return;
+        Temp.Unit = (TempUnit)TempUnitPick.SelectedIndex;
+    }
+
     private void BtnElevate_Click(object sender, RoutedEventArgs e)
     {
         if (AppEnv.RestartAsAdmin()) Close();
@@ -331,9 +339,10 @@ public partial class MainWindow : Window
             var clocks = cpu.Where(r => r.Type == SensorType.Clock && r.Name.StartsWith("Core", StringComparison.OrdinalIgnoreCase) && r.Value > 0)
                             .Select(r => r.Value!.Value).ToList();
             var power = Pick(cpu, SensorType.Power, "Package");
-            _cpuCard.Value = (load is float l ? $"{l:0}%" : "—") + (temp is float t ? $"  ·  {t:0}°C" : "");
+            _cpuCard.Value = (load is float l ? $"{l:0}%" : "—") + (temp is float t ? $"  ·  {Temp.Short(t)}" : "");
             _cpuCard.Detail = string.Join("  ·  ", new[]
             {
+                temp is float tt ? Temp.Others(tt) : null,
                 clocks.Count > 0 ? $"{clocks.Average() / 1000:0.00} GHz avg" : null,
                 power is float p ? $"{p:0} W" : null,
                 temp == null ? "temp hidden (see notes)" : null,
@@ -352,10 +361,11 @@ public partial class MainWindow : Window
             var temp = Pick(gpu, SensorType.Temperature, "GPU Core", "GPU Hot Spot") ?? MaxOf(gpu, SensorType.Temperature);
             var power = Pick(gpu, SensorType.Power, "GPU Package", "GPU Power", "GPU Board", "GPU Core");
             var clock = Pick(gpu, SensorType.Clock, "GPU Core");
-            _gpuCard.Value = (load is float l ? $"{l:0}%" : "—") + (temp is float t ? $"  ·  {t:0}°C" : "");
+            _gpuCard.Value = (load is float l ? $"{l:0}%" : "—") + (temp is float t ? $"  ·  {Temp.Short(t)}" : "");
             _gpuCard.Detail = string.Join("  ·  ", new[]
             {
                 gpuRoot.Hardware.Replace("NVIDIA GeForce ", "").Replace("AMD Radeon ", "Radeon "),
+                temp is float tt ? Temp.Others(tt) : null,
                 clock is float c ? $"{c:0} MHz" : null,
                 power is float p ? $"{p:0} W" : null,
             }.Where(s => s != null));
@@ -398,8 +408,8 @@ public partial class MainWindow : Window
         {
             var hot = driveTemps[0];
             var usedSpace = rs.FirstOrDefault(r => r.Hardware == hot.Hardware && r.Type == SensorType.Load && r.Name.Contains("Used Space", StringComparison.OrdinalIgnoreCase));
-            _diskCard.Value = $"{hot.Value:0}°C";
-            _diskCard.Detail = hot.Hardware + (usedSpace?.Value is float us ? $"  ·  {us:0}% full" : "");
+            _diskCard.Value = Temp.Short(hot.Value!.Value);
+            _diskCard.Detail = (Temp.Others(hot.Value!.Value) is string o ? o + "  ·  " : "") + hot.Hardware + (usedSpace?.Value is float us ? $"  ·  {us:0}% full" : "");
             _diskCard.Percent = usedSpace?.Value ?? 0;
             _diskCard.Heat = HeatLevel(hot.Value, 60, 70);
         }

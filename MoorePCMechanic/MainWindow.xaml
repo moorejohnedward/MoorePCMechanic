@@ -119,6 +119,14 @@
                 <TextBlock x:Name="SubtitleText" Foreground="{StaticResource MutedBrush}" Text="Checking your machine…"/>
             </StackPanel>
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <ComboBox x:Name="TempUnitPick" Width="130" VerticalAlignment="Center" Margin="0,0,10,0"
+                          ToolTip="Show temperatures in Celsius, Fahrenheit, Kelvin or all three"
+                          SelectionChanged="TempUnitPick_SelectionChanged">
+                    <ComboBoxItem Content="°C"/>
+                    <ComboBoxItem Content="°F"/>
+                    <ComboBoxItem Content="K"/>
+                    <ComboBoxItem Content="°C · °F · K"/>
+                </ComboBox>
                 <Button x:Name="BtnPawnIO" Style="{StaticResource AccentButton}" Click="BtnPawnIO_Click" Margin="0,0,10,0" Visibility="Collapsed"
                         ToolTip="CPU temperature needs the free PawnIO sensor driver. Downloads the official signed installer and runs it.">
                     <StackPanel Orientation="Horizontal">
@@ -486,9 +494,9 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Sensor" Binding="{Binding Name}" Width="*"/>
                                 <DataGridTextColumn Header="Type" Binding="{Binding TypeName}" Width="120"/>
-                                <DataGridTextColumn Header="Now" Binding="{Binding Value}" Width="130" FontWeight="SemiBold"/>
-                                <DataGridTextColumn Header="Min" Binding="{Binding Min}" Width="120"/>
-                                <DataGridTextColumn Header="Max" Binding="{Binding Max}" Width="120"/>
+                                <DataGridTextColumn Header="Now" Binding="{Binding Value}" Width="Auto" MinWidth="130" FontWeight="SemiBold"/>
+                                <DataGridTextColumn Header="Min" Binding="{Binding Min}" Width="Auto" MinWidth="120"/>
+                                <DataGridTextColumn Header="Max" Binding="{Binding Max}" Width="Auto" MinWidth="120"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Border>

@@ -130,7 +130,7 @@ public sealed class SensorService : IDisposable
         if (v is not float x || float.IsNaN(x)) return "—";
         return t switch
         {
-            SensorType.Temperature => $"{x:0.0} °C",
+            SensorType.Temperature => Temp.Full(x),
             SensorType.Load or SensorType.Control or SensorType.Level => $"{x:0.0} %",
             SensorType.Clock => $"{x:0} MHz",
             SensorType.Power => $"{x:0.0} W",

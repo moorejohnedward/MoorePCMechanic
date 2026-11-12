@@ -1,5 +1,9 @@
 # Changelog - Moore PC Mechanic
 
+## v0.4.4 - Nov 11, 2026 (Fahrenheit and Kelvin)
+- **Temperatures in °C, °F and K.** A new picker at the top of the window chooses °C, °F, K, or all three (the default). Dashboard tiles show the main number big with the other units underneath. Live sensors and benchmark notes show all three, e.g. "65.0 °C · 149.0 °F · 338.2 K". Your choice is remembered.
+- Warnings still use the same limits (for example a hot CPU at 90 °C = 194 °F), whatever unit is shown.
+
 ## v0.4.3 - Nov 11, 2026 (Updater fix)
 - **Fixed: "Windows blocked the update in this folder" even in admin mode.** A second, older copy of the app was still running (the one that starts minimized with Windows for Audio Guard). It kept the previous version's file locked, so the updater couldn't clear it. The updater now works around a locked old file, and after updating it closes any older copies still running.
 

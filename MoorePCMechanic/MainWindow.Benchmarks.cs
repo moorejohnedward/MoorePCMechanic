@@ -107,7 +107,7 @@ public partial class MainWindow
             : $"{now.Label}  ({Where(now)}{now.DateText})   compared with   {before.Label}  ({Where(before)}{before.DateText})";
         BmLines.ItemsSource = BenchmarkService.Compare(now, before);
         var notes = new List<string>();
-        if (now.MaxCpuTemp is double t) notes.Add($"Hottest processor temperature during the all-core test: {t:0} °C.");
+        if (now.MaxCpuTemp is double t) notes.Add($"Hottest processor temperature during the all-core test: {Temp.Full(t, "0")}.");
         else if (now.CpuMulti != null) notes.Add("Processor temperature wasn't available (run as admin to include the heat check).");
         if (!string.IsNullOrWhiteSpace(now.Notes)) notes.Add(now.Notes);
         if (!string.IsNullOrEmpty(now.Gpu)) notes.Add($"Graphics card tested: {now.Gpu}" + (string.IsNullOrEmpty(now.GpuDriver) ? "." : $" (driver {now.GpuDriver})."));
