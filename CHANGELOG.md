@@ -1,5 +1,19 @@
 # Changelog - Moore PC Mechanic
 
+## v0.4.0 - Nov 11, 2026 (Drivers & Benchmarks)
+- **New Drivers tab.** One button checks for driver updates, then one more downloads and installs them.
+  - **Windows Update drivers:** lists the driver updates Windows Update has for this PC. Tick the ones you want and click **Download & install**. A System Restore point is made first so it can be undone.
+  - **NVIDIA graphics driver:** compares your driver with NVIDIA's newest for your exact card. One click downloads it, confirms it's genuinely signed by NVIDIA, makes a restore point and installs it silently, keeping your settings.
+  - **Problem devices:** anything Windows reports a problem with (the yellow warnings in Device Manager) shows at the top in plain English.
+  - **Installed drivers:** every driver with its maker, version, date and age. Search it, or hide Microsoft's built-in ones.
+  - Installing needs admin. The app offers to restart as admin, and offers a restart afterwards when a driver needs one.
+- **New Benchmarks tab** (replaces the "coming soon" page):
+  - **Processor:** one core and all threads. The all-thread test also watches temperature and clock speed for overheating (throttling); run as admin to include it.
+  - **Memory:** read speed, copy speed and latency.
+  - **Drive:** big-file read and write and small random reads, on any drive you pick (uses a 2 GB test file that is deleted afterwards).
+  - **Graphics card:** compute power (TFLOPS) and video memory speed.
+  - Name each run (e.g. "Before RAM upgrade"). Runs are saved, and each new run is compared with the last one, with gains in green and losses in red. Pick any two saved runs to compare them.
+
 ## v0.3.1 - Nov 10, 2026 (Icon)
 - **New icon mashup:** dial torque wrench in front of the gear, with the heartbeat line underneath.
 

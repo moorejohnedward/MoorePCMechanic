@@ -139,10 +139,10 @@ public static class BenchmarkService
         Add("Memory: read speed", now.MemReadGBs, before?.MemReadGBs, "0.0", " GB/s", true, "Dual-channel memory roughly doubles this.");
         Add("Memory: copy speed", now.MemCopyGBs, before?.MemCopyGBs, "0.0", " GB/s", true, "Read and write together.");
         Add("Memory: latency", now.MemLatencyNs, before?.MemLatencyNs, "0.0", " ns", false, "Lower is better. Tighter timings and higher speed lower it.");
-        Add($"Drive {now.DiskDrive}: big file read", now.DiskSeqReadMBs, before?.DiskSeqReadMBs, "0", " MB/s", true, "Loading big files and games.");
-        Add($"Drive {now.DiskDrive}: big file write", now.DiskSeqWriteMBs, before?.DiskSeqWriteMBs, "0", " MB/s", true, "Saving and copying big files.");
-        Add($"Drive {now.DiskDrive}: small random reads", now.Disk4kIops, before?.Disk4kIops, "0", " IOPS", true, "How snappy Windows and apps feel (one request at a time).");
-        Add($"Drive {now.DiskDrive}: small reads, many at once", now.Disk4kMultiIops, before?.Disk4kMultiIops, "0", " IOPS", true, "Busy multitasking and game loading.");
+        Add($"{now.DiskDrive} drive: big file read", now.DiskSeqReadMBs, before?.DiskSeqReadMBs, "0", " MB/s", true, "Loading big files and games.");
+        Add($"{now.DiskDrive} drive: big file write", now.DiskSeqWriteMBs, before?.DiskSeqWriteMBs, "0", " MB/s", true, "Saving and copying big files.");
+        Add($"{now.DiskDrive} drive: small random reads", now.Disk4kIops, before?.Disk4kIops, "0", " IOPS", true, "How snappy Windows and apps feel (one request at a time).");
+        Add($"{now.DiskDrive} drive: small reads, many at once", now.Disk4kMultiIops, before?.Disk4kMultiIops, "0", " IOPS", true, "Busy multitasking and game loading.");
         Add("Graphics: compute", now.GpuTflops, before?.GpuTflops, "0.0", " TFLOPS", true, "Raw shader math: games, AI, rendering.");
         Add("Graphics: video memory speed", now.GpuMemGBs, before?.GpuMemGBs, "0", " GB/s", true, "Higher resolutions and textures lean on this.");
         return lines;
@@ -170,7 +170,7 @@ public static class BenchmarkService
             steps.Add(("Memory: latency", 4, () => run.MemLatencyNs = MemoryLatency(ct)));
         }
         if (o.Disk && !string.IsNullOrEmpty(o.DiskRoot))
-            steps.Add(("Drive " + o.DiskRoot, 14, () => DiskTest(run, o.DiskRoot!, p => progress.Report((-1, p)), ct)));
+            steps.Add((o.DiskRoot!.TrimEnd('\\') + " drive", 14, () => DiskTest(run, o.DiskRoot!, p => progress.Report((-1, p)), ct)));
         if (o.Gpu)
             steps.Add(("Graphics card", 8, () =>
             {
@@ -197,7 +197,7 @@ public static class BenchmarkService
     //  Processor
     // ---------------------------------------------------------------------
 
-    /// <summary>Work units per second × 10 on <paramref name="threads"/> threads (warm-up first). Higher is better.</summary>
+    /// <summary>Work units per second ÷ 10 on <paramref name="threads"/> threads (warm-up first). Higher is better.</summary>
     private static double CpuScore(int threads, double seconds, CancellationToken ct, Action<double>? perSecond = null)
     {
         RunCpuFor(threads, 0.8, ct, null); // warm up: let the CPU reach full clock
@@ -239,10 +239,10 @@ public static class BenchmarkService
         Volatile.Write(ref stop, true);
         foreach (var w in workers) w.Join();
         ct.ThrowIfCancellationRequested();
-        return units / sw.Elapsed.TotalSeconds * 10;
+        return units / sw.Elapsed.TotalSeconds / 10; // a modern desktop core scores in the low thousands
     }
 
-    /// <summary>One unit of mixed work (about a millisecond): integer hashing, branching and floating-point math, like real apps.</summary>
+    /// <summary>One unit of mixed work (a few dozen microseconds): integer hashing, branching and floating-point math, like real apps.</summary>
     private static double WorkUnit(uint[] data, int seed)
     {
         // integer: hash and shuffle the table
@@ -362,7 +362,7 @@ public static class BenchmarkService
     /// <summary>Average time for one random trip to memory (each step depends on the last, so the CPU can't guess ahead).</summary>
     private static double MemoryLatency(CancellationToken ct)
     {
-        const int count = 64 * 1024 * 1024 / 8; // 64 MB of "next" links, one per 64-byte cache line is plenty random
+        const int count = 64 * 1024 * 1024; // 64 million links = 256 MB, far bigger than any processor cache
         var next = new int[count];
         for (int i = 0; i < count; i++) next[i] = i;
         var rng = new Random(12345);
@@ -435,7 +435,7 @@ public static class BenchmarkService
                                            FileOptions.WriteThrough | NoBuffering, DiskFileSize))
             {
                 // big sequential write: 8 workers each writing their own slice
-                status("Drive: writing a 2 GB test file…");
+                status(run.DiskDrive + " drive: writing a 2 GB test file…");
                 long slice = DiskFileSize / threads;
                 var sw = Stopwatch.StartNew();
                 Parallel.For(0, threads, new ParallelOptions { MaxDegreeOfParallelism = threads }, t =>
@@ -450,7 +450,7 @@ public static class BenchmarkService
                 ct.ThrowIfCancellationRequested();
                 run.DiskSeqWriteMBs = DiskFileSize / sw.Elapsed.TotalSeconds / (1024 * 1024);
 
-                status("Drive: reading it back…");
+                status(run.DiskDrive + " drive: reading it back…");
                 sw.Restart();
                 Parallel.For(0, threads, new ParallelOptions { MaxDegreeOfParallelism = threads }, t =>
                 {
@@ -464,12 +464,12 @@ public static class BenchmarkService
                 ct.ThrowIfCancellationRequested();
                 run.DiskSeqReadMBs = DiskFileSize / sw.Elapsed.TotalSeconds / (1024 * 1024);
 
-                status("Drive: small random reads…");
+                status(run.DiskDrive + " drive: small random reads…");
                 long ops = RandomReads(h, bP, 1, 4, ct);
                 run.Disk4kIops = ops / 4.0;
                 run.Disk4kReadMBs = run.Disk4kIops * RandBlock / (1024 * 1024);
 
-                status("Drive: small random reads, many at once…");
+                status(run.DiskDrive + " drive: small random reads, many at once…");
                 run.Disk4kMultiIops = RandomReads(h, bP, 16, 4, ct) / 4.0;
             }
         }

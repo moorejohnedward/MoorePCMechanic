@@ -58,3 +58,32 @@ Each entry records what was built, why, and the concepts behind it. The Git comm
 
 **Tested 2026-11-10, 8:13 PM:** first real in-app update on my PC. v0.2.0 found v0.3.1 on GitHub, downloaded and verified it, swapped itself and restarted. The leftover old file was cleaned up automatically. The updater works end to end.
 
+---
+
+## 2026-11-11: v0.4, Drivers tab + Benchmarks tab
+
+**Goal:** the two features that make this a real "Driver Booster + System Mechanic" replacement. Drivers should update with one click, and benchmarks should prove whether an upgrade (RAM, the planned RTX 5070 Ti, a driver) actually helped.
+
+**Built: drivers** (`Services/DriverService.cs`, `MainWindow.Drivers.cs`)
+- **Inventory:** WMI `Win32_PnPSignedDriver` lists every driver (maker, version, date). `Win32_PnPEntity` with a non-zero `ConfigManagerErrorCode` finds problem devices, translated from Device Manager's error codes into plain English.
+- **Windows Update drivers:** uses the Windows Update Agent COM API (`Microsoft.Update.Session`) through C#'s `dynamic` late binding. It searches `IsInstalled=0 and Type='Driver'`, then downloads and installs each chosen update and reports the result and whether a restart is needed.
+- **Safety net:** before any install, `SystemRestore.CreateRestorePoint` (WMI) makes an undo point. It also detects when Windows skips one because a restore point was already made in the last 24 hours.
+- **NVIDIA one-click:** NVIDIA's public lookup service maps the card name to its product IDs and returns the newest driver version and download link. Windows shows NVIDIA versions differently (32.0.15.6614 = 566.14), so the app converts between the two. The installer is downloaded only from nvidia.com and must pass Windows' Authenticode check (`WinVerifyTrust`) with "NVIDIA Corporation" as the signer before it runs silently (`-s -noreboot`).
+
+**Built: benchmarks** (`Services/BenchmarkService.cs`, `Services/GpuBenchmark.cs`, `MainWindow.Benchmarks.cs`)
+- **Processor:** a mixed workload (integer hashing, branches, floating-point Mandelbrot) kept inside the CPU cache, timed on one thread and then on every thread. While it runs, the app samples temperature and core clocks from the sensor loop to spot throttling.
+- **Memory:** 512 MB buffers (far bigger than any cache) read with SIMD vectors and copied on all cores for bandwidth. Latency comes from a 256 MB random pointer chase (Sattolo's shuffle), where every step depends on the previous one.
+- **Drive:** a 2 GB file opened with Windows' file cache turned off (`FILE_FLAG_NO_BUFFERING` + write-through), so the drive itself is measured. It does 1 MB sequential writes and reads with 8 workers, plus 4 KB random reads at 1 and 16 at a time. The data is random so drives can't cheat by compressing it.
+- **Graphics card:** a Direct3D 11 compute shader (HLSL, compiled at run time) runs about 2 million GPU threads of multiply-add chains to measure TFLOPS. Copying a 512 MB buffer on the card measures video memory bandwidth. The test picks the adapter with the most video memory and skips Windows' software renderer.
+- **History:** every run is saved to `Documents\Moore PC Mechanic\benchmarks.json` with a label and a snapshot of the hardware (CPU, RAM configuration, GPU and driver version). The app compares runs and colors the changes.
+
+**Testing on a real Windows machine:** I added a smoke test (`tests/Smoke`, `.github/workflows/smoke.yml`) that runs the driver and benchmark code on GitHub's Windows servers. Its first run caught three things before release:
+- The CPU score scale was 100× too big.
+- The memory latency test was only 32 MB, small enough to fit in a server CPU's cache, so latency looked too good.
+- The graphics test chose Windows' software renderer on a machine with no real GPU.
+
+All three were fixed. The NVIDIA lookup returned the current driver (621.14) for both an RTX 4070 and an RTX 5070 Ti.
+
+**Concepts:** COM automation and late binding, WMI, System Restore, digital signatures (Authenticode), REST/XML/JSON parsing, multithreading with `Parallel.For` and atomics, SIMD (`Vector<T>`), unmanaged aligned memory and `unsafe` pointers, unbuffered file I/O, GPU compute shaders (Direct3D 11, HLSL), measurement design (warm-ups, best-of-N, defeating caches and compression), automated testing in CI.
+
+---

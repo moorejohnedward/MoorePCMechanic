@@ -61,7 +61,8 @@ void main(uint3 id : SV_DispatchThreadID)
             for (uint i = 0; factory.EnumAdapters1(i, out IDXGIAdapter1 a).Success; i++)
             {
                 var desc = a.Description1;
-                bool software = (desc.Flags & AdapterFlags.Software) != 0;
+                // skip Windows' built-in software renderer ("Microsoft Basic Render Driver", vendor 0x1414)
+                bool software = (desc.Flags & AdapterFlags.Software) != 0 || desc.VendorId == 0x1414;
                 ulong mem = (ulong)desc.DedicatedVideoMemory;
                 if (!software && (best == null || mem > bestMem))
                 {
