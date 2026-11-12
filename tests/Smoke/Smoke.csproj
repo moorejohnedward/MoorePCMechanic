@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Smoke test run on GitHub's Windows servers: exercises the driver and benchmark code without the window. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\MoorePCMechanic\Services\AppEnv.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\UpdateService.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\DriverService.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\BenchmarkService.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\GpuBenchmark.cs" />
+    <PackageReference Include="System.Management" Version="10.0.2" />
+    <PackageReference Include="Vortice.Direct3D11" Version="3.6.2" />
+    <PackageReference Include="Vortice.D3DCompiler" Version="3.6.2" />
+  </ItemGroup>
+</Project>

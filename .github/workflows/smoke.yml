@@ -1,0 +1,18 @@
+# Smoke test: runs the driver and benchmark code on a real Windows machine (GitHub's server)
+# and prints the results. Started by hand from the Actions tab or by Claude.
+name: Smoke test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Run smoke test
+        run: dotnet run --project tests/Smoke/Smoke.csproj -c Release

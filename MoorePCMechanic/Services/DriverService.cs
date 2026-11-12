@@ -397,7 +397,12 @@ public static class DriverService
     {
         var gpu = FindNvidiaGpu();
         if (gpu is null) return null;
-        var (name, winVer) = gpu.Value;
+        return await CheckNvidiaForAsync(gpu.Value.Name, gpu.Value.WinVersion, ct);
+    }
+
+    /// <summary>Looks up NVIDIA's newest driver for a named card (split out so it can be tested without that card).</summary>
+    public static async Task<NvidiaStatus> CheckNvidiaForAsync(string name, string winVer, CancellationToken ct = default)
+    {
         var installed = NvidiaVersionFromWindows(winVer);
         try
         {
