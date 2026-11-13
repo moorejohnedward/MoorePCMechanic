@@ -12,6 +12,51 @@ public partial class MainWindow
     private List<StartupApp> _startupApps = new();
     private bool _tuneBusy;
 
+    private bool _tuneAutoLoading;
+
+    /// <summary>Called from Window_Loaded: fills the day/time pickers and reads the current schedule from Windows.</summary>
+    private async void InitTuneAuto()
+    {
+        _tuneAutoLoading = true;
+        TuneAutoDay.ItemsSource = Enum.GetValues<DayOfWeek>();
+        TuneAutoHour.ItemsSource = Enumerable.Range(0, 24).Select(h => $"{h:00}00").ToList();
+        var (on, day, hour) = await Task.Run(TuneUpService.GetSchedule);
+        TuneAutoCheck.IsChecked = on;
+        TuneAutoDay.SelectedItem = day;
+        TuneAutoHour.SelectedIndex = hour;
+        ShowLastAutoRun();
+        _tuneAutoLoading = false;
+    }
+
+    private void ShowLastAutoRun()
+    {
+        var last = TuneUpService.LastAutomaticRun();
+        TuneAutoLast.Text = last == null ? "No automatic tune-up has run yet." : "Last automatic tune-up: " + last;
+    }
+
+    private async void TuneAuto_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_tuneAutoLoading || TuneAutoDay.SelectedItem is not DayOfWeek day || TuneAutoHour.SelectedIndex < 0) return;
+        bool on = TuneAutoCheck.IsChecked == true;
+        if (!AppEnv.IsAdmin())
+        {
+            _tuneAutoLoading = true;
+            TuneAutoCheck.IsChecked = !on; // put the box back until we're admin
+            _tuneAutoLoading = false;
+            EnsureAdminFor("schedule an automatic tune-up");
+            return;
+        }
+        int hour = TuneAutoHour.SelectedIndex;
+        try
+        {
+            TuneStatus.Text = await Task.Run(() => TuneUpService.SetSchedule(on, day, hour));
+        }
+        catch (Exception ex)
+        {
+            TuneStatus.Text = "Couldn't set up the schedule: " + ex.Message;
+        }
+    }
+
     private void SetTuneBusy(bool busy, string? status = null)
     {
         _tuneBusy = busy;

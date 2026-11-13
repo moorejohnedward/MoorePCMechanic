@@ -68,6 +68,18 @@ Step("Tune-up apply + undo", () =>
     Console.WriteLine($"      power after undo: {TuneUpService.ActivePowerScheme().Name}");
 });
 
+Step("Automatic tune-up (headless) + schedule", () =>
+{
+    TuneUpService.RunAutomatic();
+    Console.WriteLine("      history: " + TuneUpService.LastAutomaticRun());
+    Console.WriteLine("      " + TuneUpService.SetSchedule(true, DayOfWeek.Sunday, 3));
+    var (on, day, hour) = TuneUpService.GetSchedule();
+    Console.WriteLine($"      read back: on={on} day={day} hour={hour:00}00");
+    if (!on || day != DayOfWeek.Sunday || hour != 3) throw new Exception("schedule didn't read back");
+    Console.WriteLine("      " + TuneUpService.SetSchedule(false, DayOfWeek.Sunday, 3));
+    if (TuneUpService.GetSchedule().On) throw new Exception("schedule not removed");
+});
+
 var progress = new Progress<(double, string)>(p => Console.WriteLine($"      .. {p.Item2}"));
 var drive = BenchmarkService.TestableDrives().FirstOrDefault();
 Console.WriteLine("Drives: " + string.Join(", ", BenchmarkService.TestableDrives().Select(d => d.Text)));

@@ -544,6 +544,7 @@
                 <Grid Margin="0,14,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
@@ -574,7 +575,24 @@
                         </StackPanel>
                     </DockPanel>
 
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <!-- Automatic tune-up -->
+                    <Border Grid.Row="1" Style="{StaticResource Panel}" Padding="14,10" Margin="0,0,0,12">
+                        <StackPanel>
+                            <WrapPanel>
+                                <CheckBox x:Name="TuneAutoCheck" Content="Tune up automatically every" Foreground="{StaticResource TextBrush}"
+                                          VerticalAlignment="Center" Margin="0,0,10,0" Click="TuneAuto_Changed"
+                                          ToolTip="Windows Task Scheduler runs the safe fixes weekly (power plan, Game Mode, junk cleanup, SSD re-TRIM). Never restarts the PC, empties the Recycle Bin or changes startup apps."/>
+                                <ComboBox x:Name="TuneAutoDay" Width="130" VerticalAlignment="Center" Margin="0,0,8,0" SelectionChanged="TuneAuto_Changed"/>
+                                <TextBlock Text="at" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <ComboBox x:Name="TuneAutoHour" Width="90" VerticalAlignment="Center" SelectionChanged="TuneAuto_Changed"/>
+                                <TextBlock Text="(if the PC is off or asleep then, it runs soon after it's back on)" Foreground="{StaticResource MutedBrush}"
+                                           VerticalAlignment="Center" Margin="12,0,0,0"/>
+                            </WrapPanel>
+                            <TextBlock x:Name="TuneAutoLast" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                         <ItemsControl x:Name="TuneList">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
@@ -616,7 +634,7 @@
                         </ItemsControl>
                     </ScrollViewer>
 
-                    <Border Grid.Row="2" Style="{StaticResource Panel}" Padding="0" Margin="0,4,0,8" MaxHeight="260">
+                    <Border Grid.Row="3" Style="{StaticResource Panel}" Padding="0" Margin="0,4,0,8" MaxHeight="260">
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Top" Margin="14,12,14,6" FontSize="15" FontWeight="SemiBold"
                                        Text="Apps that start with Windows (untick to stop one starting; applies with Tune &amp; optimize)"/>

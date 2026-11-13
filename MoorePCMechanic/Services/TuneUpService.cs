@@ -310,6 +310,119 @@ public static class TuneUpService
     }
 
     // =====================================================================
+    //  Automatic tune-up (Windows Task Scheduler)
+    // =====================================================================
+
+    public const string TaskName = @"Moore PC Mechanic\Automatic tune-up";
+    private static string HistoryFile => Path.Combine(AppEnv.DataFolder, "tuneup-history.txt");
+
+    /// <summary>
+    /// What the scheduled run does, with no window: the safe, no-restart fixes only (power plan, Game Mode,
+    /// junk cleanup, SSD re-TRIM). It never empties the Recycle Bin, changes startup apps or GPU scheduling,
+    /// or restarts the PC. Results go to tuneup-history.txt and show in the app next time it opens.
+    /// </summary>
+    public static void RunAutomatic()
+    {
+        var log = new List<string>();
+        try
+        {
+            if (!AppEnv.IsAdmin()) { WriteHistory("Skipped: the scheduled task isn't running as administrator. Turn automatic tune-up off and on again in the app."); return; }
+            var (rpOk, _) = DriverService.CreateRestorePoint("Moore PC Mechanic: automatic tune-up");
+            var items = Scan(null, null);
+            foreach (var i in items)
+                i.Selected = i.Id == "trim" || (i.NeedsFix && i.Id is "power" or "gamemode" or "junk");
+            Apply(items, new List<StartupApp>(), new Progress<string>(_ => { }));
+            foreach (var i in items.Where(i => i.Selected)) log.Add(i.Title + ": " + i.Result);
+            var advice = items.Where(i => i.NeedsFix && (!i.CanFix || i.Id is "hags" or "recycle")).Select(i => i.Title).ToList();
+            if (advice.Count > 0) log.Add("Needs you (open the Tune-up tab): " + string.Join(", ", advice));
+            if (!rpOk) log.Add("(No new restore point: Windows makes at most one a day.)");
+            WriteHistory(string.Join(" | ", log));
+        }
+        catch (Exception ex)
+        {
+            WriteHistory("Stopped with an error: " + ex.Message);
+        }
+    }
+
+    private static void WriteHistory(string line)
+    {
+        try { File.AppendAllText(HistoryFile, $"{DateTime.Now:yyyy-MM-dd HHmm}  {line}{Environment.NewLine}"); } catch { }
+    }
+
+    /// <summary>Most recent automatic tune-up line, or null.</summary>
+    public static string? LastAutomaticRun()
+    {
+        try { return File.Exists(HistoryFile) ? File.ReadLines(HistoryFile).LastOrDefault(l => !string.IsNullOrWhiteSpace(l)) : null; }
+        catch { return null; }
+    }
+
+    /// <summary>(on, day, hour) of the scheduled task, read back from Windows.</summary>
+    public static (bool On, DayOfWeek Day, int Hour) GetSchedule()
+    {
+        var (code, xml) = Run("schtasks.exe", $"/Query /TN \"{TaskName}\" /XML", 30);
+        if (code != 0) return (false, DayOfWeek.Sunday, 3);
+        var day = DayOfWeek.Sunday;
+        foreach (DayOfWeek d in Enum.GetValues<DayOfWeek>())
+            if (xml.Contains("<" + d + " />") || xml.Contains("<" + d + "/>")) { day = d; break; }
+        var m = Regex.Match(xml, @"<StartBoundary>\d{4}-\d\d-\d\dT(\d\d):");
+        int hour = m.Success ? int.Parse(m.Groups[1].Value) : 3;
+        return (true, day, hour);
+    }
+
+    /// <summary>Creates (or removes) the weekly task. Runs as you, with admin rights, only while you're signed in;
+    /// if the PC was off or asleep at that time, it runs soon after it's back on. Needs admin.</summary>
+    public static string SetSchedule(bool on, DayOfWeek day, int hour)
+    {
+        if (!on)
+        {
+            Run("schtasks.exe", $"/Delete /TN \"{TaskName}\" /F", 30);
+            return "Automatic tune-up turned off.";
+        }
+        var exe = UpdateService.CurrentExePath;
+        var start = DateTime.Today.AddHours(hour);
+        var user = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+        var xml = $@"<?xml version=""1.0"" encoding=""UTF-16""?>
+<Task version=""1.4"" xmlns=""http://schemas.microsoft.com/windows/2004/02/mit/task"">
+  <RegistrationInfo><Description>Weekly tune-up by Moore PC Mechanic: power plan, Game Mode, junk cleanup, SSD re-TRIM. Results: Documents\Moore PC Mechanic\tuneup-history.txt</Description></RegistrationInfo>
+  <Triggers>
+    <CalendarTrigger>
+      <StartBoundary>{start:yyyy-MM-ddTHH:mm:ss}</StartBoundary>
+      <Enabled>true</Enabled>
+      <ScheduleByWeek><DaysOfWeek><{day} /></DaysOfWeek><WeeksInterval>1</WeeksInterval></ScheduleByWeek>
+    </CalendarTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id=""Author"">
+      <UserId>{System.Security.SecurityElement.Escape(user)}</UserId>
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>HighestAvailable</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+    <IdleSettings><StopOnIdleEnd>false</StopOnIdleEnd><RestartOnIdle>false</RestartOnIdle></IdleSettings>
+    <Enabled>true</Enabled>
+    <Hidden>false</Hidden>
+    <ExecutionTimeLimit>PT1H</ExecutionTimeLimit>
+    <Priority>7</Priority>
+  </Settings>
+  <Actions Context=""Author"">
+    <Exec><Command>{System.Security.SecurityElement.Escape(exe)}</Command><Arguments>--tuneup</Arguments></Exec>
+  </Actions>
+</Task>";
+        var file = Path.Combine(Path.GetTempPath(), "MoorePCMechanic-tuneup-task.xml");
+        File.WriteAllText(file, xml, System.Text.Encoding.Unicode);
+        var (code, output) = Run("schtasks.exe", $"/Create /TN \"{TaskName}\" /XML \"{file}\" /F", 30);
+        try { File.Delete(file); } catch { }
+        if (code != 0) throw new InvalidOperationException(output.Trim());
+        return $"Automatic tune-up is on: every {day} at {hour:00}00 (or soon after, if the PC was off or asleep).";
+    }
+
+    // =====================================================================
     //  Deep repair: DISM + SFC (Windows' own system file repair)
     // =====================================================================
 

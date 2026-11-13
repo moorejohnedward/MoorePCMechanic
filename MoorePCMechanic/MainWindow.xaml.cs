@@ -76,6 +76,7 @@ public partial class MainWindow : Window
         _loop = Task.Run(() => SensorLoop(_cts.Token));
         InitAudio();
         InitBenchmarks();
+        InitTuneAuto();
         _ = CheckForUpdateQuietlyAsync();
         await RunInventoryAsync();
     }

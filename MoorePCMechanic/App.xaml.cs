@@ -10,9 +10,22 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         DispatcherUnhandledException += OnUnhandled;
+
+        // Scheduled automatic tune-up (Windows Task Scheduler runs "MoorePCMechanic.exe --tuneup"): no window.
+        if (e.Args.Contains("--tuneup"))
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            base.OnStartup(e);
+            Task.Run(TuneUpService.RunAutomatic).ContinueWith(_ => Dispatcher.Invoke(() => Shutdown()));
+            return;
+        }
+
         if (e.Args.Contains("--updated")) UpdateService.CloseOtherCopies(); // older copies still running would keep the old .exe locked
         UpdateService.CleanupAfterUpdate(); // remove the previous version left behind by an update
         base.OnStartup(e);
+        var main = new MoorePCMechanic.MainWindow();
+        MainWindow = main;
+        main.Show();
     }
 
     private static void OnUnhandled(object sender, DispatcherUnhandledExceptionEventArgs e)
