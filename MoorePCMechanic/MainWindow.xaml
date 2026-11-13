@@ -119,6 +119,13 @@
                 <TextBlock x:Name="SubtitleText" Foreground="{StaticResource MutedBrush}" Text="Checking your machine…"/>
             </StackPanel>
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="BtnTuneUp" Style="{StaticResource AccentButton}" Click="BtnTuneUp_Click" Margin="0,0,10,0"
+                        ToolTip="Find and fix what's slowing this PC down">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xEC4A;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="Tune up"/>
+                    </StackPanel>
+                </Button>
                 <ComboBox x:Name="TempUnitPick" Width="130" VerticalAlignment="Center" Margin="0,0,10,0"
                           ToolTip="Show temperatures in Celsius, Fahrenheit, Kelvin or all three"
                           SelectionChanged="TempUnitPick_SelectionChanged">
@@ -528,6 +535,100 @@
                                 <DataGridTextColumn Header="Memory" Binding="{Binding MemoryText}" Width="130" FontWeight="SemiBold"/>
                             </DataGrid.Columns>
                         </DataGrid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- Tune-up -->
+            <TabItem Header="Tune-up" x:Name="TuneTab">
+                <Grid Margin="0,14,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Margin="0,0,0,12" LastChildFill="True">
+                        <Button x:Name="BtnTuneScan" DockPanel.Dock="Left" Style="{StaticResource GhostButton}" Click="BtnTuneScan_Click"
+                                ToolTip="Look for what's slowing this PC down. Changes nothing.">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE721;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Scan again"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BtnTuneApply" DockPanel.Dock="Left" Style="{StaticResource AccentButton}" Click="BtnTuneApply_Click" IsEnabled="False"
+                                ToolTip="Makes a restore point, then applies the ticked items and your startup-app changes">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xEC4A;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Tune &amp; optimize"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BtnTuneUndo" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Click="BtnTuneUndo_Click" Margin="8,0,0,0"
+                                Content="Undo last tune-up" ToolTip="Puts back the power plan, Game Mode, GPU scheduling and startup apps"/>
+                        <Button x:Name="BtnTuneRepair" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Click="BtnTuneRepair_Click" Margin="8,0,0,0"
+                                Content="Deep repair (20-30 min)" ToolTip="Runs Windows' own repair tools (DISM and SFC) to find and fix damaged system files"/>
+                        <StackPanel VerticalAlignment="Center" Margin="8,0,0,0">
+                            <TextBlock x:Name="TuneStatus" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                                       Text="Click &quot;Tune up&quot; at the top, or &quot;Scan again&quot;, to see what can be improved."/>
+                            <ProgressBar x:Name="TuneProgress" Margin="0,6,0,0" IsIndeterminate="True" Visibility="Collapsed" MaxWidth="420" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="TuneList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border x:Name="tb" Background="{StaticResource PanelAltBrush}" CornerRadius="8" BorderThickness="4,0,0,0"
+                                            BorderBrush="{StaticResource GoodBrush}" Padding="12,10" Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="34"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <CheckBox x:Name="cb" IsChecked="{Binding Selected, Mode=TwoWay}" VerticalAlignment="Top" Margin="0,2,0,0"
+                                                      ToolTip="Include in the tune-up"/>
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock FontWeight="SemiBold" TextWrapping="Wrap">
+                                                    <Run Text="{Binding Title, Mode=OneWay}"/><Run Text="   "/><Run Text="{Binding State, Mode=OneWay}" Foreground="{StaticResource MutedBrush}" FontWeight="Normal"/>
+                                                </TextBlock>
+                                                <TextBlock Text="{Binding Why}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" x:Name="st" Text="{Binding StatusText}" FontWeight="SemiBold" Margin="16,0,0,0"
+                                                       Foreground="{StaticResource GoodBrush}" VerticalAlignment="Top"/>
+                                        </Grid>
+                                    </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding CanFix}" Value="False">
+                                            <Setter TargetName="cb" Property="Visibility" Value="Hidden"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="1">
+                                            <Setter TargetName="tb" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                            <Setter TargetName="st" Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Level}" Value="2">
+                                            <Setter TargetName="tb" Property="BorderBrush" Value="{StaticResource TipBrush}"/>
+                                            <Setter TargetName="st" Property="Foreground" Value="{StaticResource TipBrush}"/>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <Border Grid.Row="2" Style="{StaticResource Panel}" Padding="0" Margin="0,4,0,8" MaxHeight="260">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Margin="14,12,14,6" FontSize="15" FontWeight="SemiBold"
+                                       Text="Apps that start with Windows (untick to stop one starting; applies with Tune &amp; optimize)"/>
+                            <DataGrid x:Name="StartupGrid" IsReadOnly="False" CanUserAddRows="False">
+                                <DataGrid.Columns>
+                                    <DataGridCheckBoxColumn Header="Starts" Binding="{Binding Enabled, UpdateSourceTrigger=PropertyChanged}" Width="70"/>
+                                    <DataGridTextColumn Header="App" Binding="{Binding Name}" Width="220" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="For" Binding="{Binding Where}" Width="160" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Runs" Binding="{Binding Command}" Width="*" IsReadOnly="True"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
                     </Border>
                 </Grid>
             </TabItem>

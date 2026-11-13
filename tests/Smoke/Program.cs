@@ -47,6 +47,27 @@ Step("Windows Update driver search", () =>
     Console.WriteLine($"      {t.Result.Count} update(s): " + string.Join(" | ", t.Result.Take(3).Select(u => u.Title)));
 });
 
+Step("Tune-up scan", () =>
+{
+    var items = TuneUpService.Scan(84f, "Samsung SSD 980 PRO 1TB");
+    foreach (var i in items) Console.WriteLine($"      [{(i.NeedsFix ? (i.CanFix ? "FIX " : "INFO") : " ok ")}] {i.Title}: {i.State}");
+    var apps = TuneUpService.StartupApps();
+    Console.WriteLine($"      startup apps: {apps.Count} ({string.Join(", ", apps.Take(5).Select(a => a.Name + (a.Enabled ? "" : " (off)")))})");
+    if (items.Count < 6) throw new Exception("too few checks");
+});
+Step("Tune-up apply + undo", () =>
+{
+    var items = TuneUpService.Scan(null, null);
+    foreach (var i in items) i.Selected = i.CanFix && i.Id != "recycle";
+    var apps = TuneUpService.StartupApps();
+    var log = new Progress<string>(m => Console.WriteLine("      .. " + m));
+    bool restart = TuneUpService.Apply(items, apps, log);
+    foreach (var i in items.Where(i => i.Selected)) Console.WriteLine($"      {i.Title}: {i.Result}");
+    Console.WriteLine($"      power now: {TuneUpService.ActivePowerScheme().Name}, restart needed: {restart}");
+    Console.WriteLine("      undo: " + TuneUpService.Undo());
+    Console.WriteLine($"      power after undo: {TuneUpService.ActivePowerScheme().Name}");
+});
+
 var progress = new Progress<(double, string)>(p => Console.WriteLine($"      .. {p.Item2}"));
 var drive = BenchmarkService.TestableDrives().FirstOrDefault();
 Console.WriteLine("Drives: " + string.Join(", ", BenchmarkService.TestableDrives().Select(d => d.Text)));

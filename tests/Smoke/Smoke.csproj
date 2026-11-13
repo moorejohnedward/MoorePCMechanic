@@ -14,6 +14,9 @@
     <Compile Include="..\..\MoorePCMechanic\Services\DriverService.cs" />
     <Compile Include="..\..\MoorePCMechanic\Services\BenchmarkService.cs" />
     <Compile Include="..\..\MoorePCMechanic\Services\GpuBenchmark.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\Temp.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\TuneUpService.cs" />
+    <Compile Include="..\..\MoorePCMechanic\ViewModels\ObservableBase.cs" />
     <PackageReference Include="System.Management" Version="10.0.2" />
     <PackageReference Include="Vortice.Direct3D11" Version="3.6.2" />
     <PackageReference Include="Vortice.D3DCompiler" Version="3.6.2" />
