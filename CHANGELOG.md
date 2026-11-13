@@ -1,5 +1,17 @@
 # Changelog - Moore PC Mechanic
 
+## v0.5.0 - Nov 13, 2026 (Tune-up)
+- **New "Tune up" button** (top of the window) and **Tune-up tab**. One scan shows what's slowing the PC down. **Tune & optimize** fixes the ticked items in one click.
+  - **Power plan:** switches to High performance, so the processor stops dropping into slow power-saving states between bursts.
+  - **Game Mode:** turned on, so background maintenance stays out of the way of full-screen apps.
+  - **Hardware-accelerated GPU scheduling:** turned on for the RTX card (takes effect after a restart).
+  - **Junk cleanup:** temp folders, crash dumps, old error reports and Windows Update's delivery cache. Your own files are never touched. Emptying the Recycle Bin is a separate item that's left unticked.
+  - **SSD re-TRIM:** keeps the SSDs writing at full speed, and turns TRIM back on if it's off.
+  - **Startup apps:** the same on/off switches as Task Manager's Startup tab. Untick what you don't need.
+  - **Advice:** low free space on C:, SSD running hot (with what to do about it), and a restart that's overdue or that Windows is waiting for.
+- **Restore point first**, and **Undo last tune-up** puts the power plan, Game Mode, GPU scheduling and startup apps back.
+- **Deep repair (20-30 min):** runs Windows' own DISM and System File Checker to find and fix damaged system files, then explains the result in plain English.
+
 ## v0.4.4 - Nov 11, 2026 (Fahrenheit and Kelvin)
 - **Temperatures in °C, °F and K.** A new picker at the top of the window chooses °C, °F, K, or all three (the default). Dashboard tiles show the main number big with the other units underneath. Live sensors and benchmark notes show all three, e.g. "65.0 °C · 149.0 °F · 338.2 K". Your choice is remembered.
 - Warnings still use the same limits (for example a hot CPU at 90 °C = 194 °F), whatever unit is shown.

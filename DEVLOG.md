@@ -97,3 +97,28 @@ All three were fixed. The NVIDIA lookup returned the current driver (621.14) for
 **v0.4.4: temperature units.** Added °F and K alongside °C (`Services/Temp.cs`). Sensors always report Celsius, so values stay in °C internally (warning thresholds, saved benchmark data) and are converted only for display: °F = °C × 9/5 + 32 and K = °C + 273.15. All display code goes through one formatter, so a single setting changes every screen, and the choice is saved in the user's AppData. Concepts: separating data from presentation, unit conversion, persisted user preferences.
 
 ---
+
+## 2026-11-13: v0.5, Tune-up
+
+**Goal:** one button that makes the PC run as smoothly and efficiently as possible, safely and reversibly.
+
+**Built** (`Services/TuneUpService.cs`, `MainWindow.TuneUp.cs`)
+- **Scan:** each check reports its current state, why it matters, and whether it can be fixed automatically (orange) or needs the user to act (blue advice).
+- **Fixes:**
+  - Power plan through `powercfg`, restoring the hidden built-in High performance plan if Windows has removed it.
+  - Game Mode and hardware-accelerated GPU scheduling through the registry.
+  - Junk cleanup: only Windows' disposable temp and cache folders, skipping files in use and temp files newer than a day.
+  - Recycle Bin through the Shell API, `SHEmptyRecycleBin`.
+  - SSD re-TRIM through `defrag /L`.
+- **Startup apps:** read from the Run registry keys (64- and 32-bit) and the Startup folders. They're turned on and off through Explorer's `StartupApproved` values, the same mechanism Task Manager uses: first byte 02 = on, 03 = off, followed by a timestamp. The app's entries are never deleted.
+- **Safety:**
+  - A System Restore point is made before every tune-up.
+  - Each change records its previous value in `tuneup-undo.json`, so "Undo" can restore the exact earlier state, including deleting a registry value that didn't exist before.
+  - Deleted junk can't be restored, and the app says so.
+- **Deep repair:** runs DISM `/RestoreHealth`, then `sfc /scannow`, reads their output (SFC writes UTF-16) and summarizes it.
+
+**Testing:** the smoke test on GitHub's Windows servers ran a full scan, applied every fix (it cleared 287 MB of temp files on the test machine) and then the undo, before release.
+
+**Concepts:** Windows power management, the registry (including 32/64-bit views and binary values), Shell API P/Invoke, running and parsing system tools, designing reversible changes (undo logs, restore points), user consent for destructive actions.
+
+---
