@@ -1,5 +1,10 @@
 # Changelog - Moore PC Mechanic
 
+## v0.5.1 - Nov 13, 2026 (Automatic tune-up)
+- **Tune up automatically every week.** On the Tune-up tab, tick "Tune up automatically every…" and pick a day and time (24-hour clock, default Sunday 0300). Windows Task Scheduler then runs the safe fixes with no window: power plan, Game Mode, junk cleanup and SSD re-TRIM. If the PC was off or asleep at that time, it runs soon after it's back on.
+- The automatic run never restarts the PC, empties the Recycle Bin, changes startup apps or touches GPU scheduling. Anything that needs you is listed for the next time you open the Tune-up tab.
+- A restore point is made before each automatic run. Results are shown under the schedule ("Last automatic tune-up: …") and kept in Documents\Moore PC Mechanic\tuneup-history.txt.
+
 ## v0.5.0 - Nov 13, 2026 (Tune-up)
 - **New "Tune up" button** (top of the window) and **Tune-up tab**. One scan shows what's slowing the PC down. **Tune & optimize** fixes the ticked items in one click.
   - **Power plan:** switches to High performance, so the processor stops dropping into slow power-saving states between bursts.

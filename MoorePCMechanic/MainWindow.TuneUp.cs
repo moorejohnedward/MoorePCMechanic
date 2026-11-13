@@ -38,6 +38,7 @@ public partial class MainWindow
     {
         if (_tuneAutoLoading || TuneAutoDay.SelectedItem is not DayOfWeek day || TuneAutoHour.SelectedIndex < 0) return;
         bool on = TuneAutoCheck.IsChecked == true;
+        if (!on && sender != TuneAutoCheck) return; // changing the day or time while it's off: nothing to do yet
         if (!AppEnv.IsAdmin())
         {
             _tuneAutoLoading = true;

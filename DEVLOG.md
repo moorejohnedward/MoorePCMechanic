@@ -122,3 +122,13 @@ All three were fixed. The NVIDIA lookup returned the current driver (621.14) for
 **Concepts:** Windows power management, the registry (including 32/64-bit views and binary values), Shell API P/Invoke, running and parsing system tools, designing reversible changes (undo logs, restore points), user consent for destructive actions.
 
 ---
+
+**v0.5.1: automatic tune-up.**
+- The app now has a headless mode: `MoorePCMechanic.exe --tuneup` runs without a window. App startup was changed from XAML's `StartupUri` to creating the window in code, so this mode can skip it.
+- A weekly Windows Task Scheduler task is registered from an XML definition through `schtasks /Create /XML`. It runs as the signed-in user with highest privileges. It uses `StartWhenAvailable`, so a missed time runs after the PC wakes, and has a one-hour limit.
+- The automatic run applies only fixes that are safe without a person present. Anything needing a decision (restart, Recycle Bin, startup apps) is logged as advice instead.
+- The app reads the schedule back from Windows instead of keeping its own copy, so the settings shown always match what Windows will actually do.
+- The smoke test creates, reads back and removes the real scheduled task on a Windows server.
+- Concepts: Windows Task Scheduler, headless/command-line modes for GUI apps, least-surprise automation (only unattended-safe actions).
+
+---

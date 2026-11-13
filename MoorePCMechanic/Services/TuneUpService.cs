@@ -327,7 +327,7 @@ public static class TuneUpService
         try
         {
             if (!AppEnv.IsAdmin()) { WriteHistory("Skipped: the scheduled task isn't running as administrator. Turn automatic tune-up off and on again in the app."); return; }
-            var (rpOk, _) = DriverService.CreateRestorePoint("Moore PC Mechanic: automatic tune-up");
+            var (rpOk, rpMsg) = DriverService.CreateRestorePoint("Moore PC Mechanic: automatic tune-up");
             var items = Scan(null, null);
             foreach (var i in items)
                 i.Selected = i.Id == "trim" || (i.NeedsFix && i.Id is "power" or "gamemode" or "junk");
@@ -335,7 +335,7 @@ public static class TuneUpService
             foreach (var i in items.Where(i => i.Selected)) log.Add(i.Title + ": " + i.Result);
             var advice = items.Where(i => i.NeedsFix && (!i.CanFix || i.Id is "hags" or "recycle")).Select(i => i.Title).ToList();
             if (advice.Count > 0) log.Add("Needs you (open the Tune-up tab): " + string.Join(", ", advice));
-            if (!rpOk) log.Add("(No new restore point: Windows makes at most one a day.)");
+            if (!rpOk) log.Add("(" + rpMsg + ")");
             WriteHistory(string.Join(" | ", log));
         }
         catch (Exception ex)
