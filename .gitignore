@@ -4,3 +4,15 @@ obj/
 *.user
 Release (app to run and share)/
 out/
+
+# Secrets: never commit API keys or tokens. Keys belong in environment variables,
+# Windows DPAPI-encrypted settings under %APPDATA%, or GitHub Actions secrets.
+.env
+.env.*
+!.env.example
+*.pfx
+*.pem
+*.key
+secrets.json
+settings.local.json
+appsettings.*.local.json
