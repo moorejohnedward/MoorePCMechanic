@@ -94,6 +94,38 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
+        <!-- System check line (hardware or security), with an optional fix button -->
+        <DataTemplate x:Key="CheckItemTemplate">
+            <Border x:Name="fb" Background="{StaticResource PanelAltBrush}" CornerRadius="8" BorderThickness="4,0,0,0"
+                    BorderBrush="{StaticResource TipBrush}" Padding="12,10" Margin="0,0,6,10">
+                <DockPanel LastChildFill="True">
+                    <Button x:Name="fix" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Margin="12,0,0,0" VerticalAlignment="Center"
+                            Content="{Binding FixLabel}" Tag="{Binding FixId}" Click="CheckFix_Click"/>
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock x:Name="lvl" Text="{Binding LevelText}" FontSize="11" FontWeight="Bold"
+                                       Foreground="{StaticResource TipBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding Detail}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding LevelText}" Value="GOOD">
+                    <Setter TargetName="fb" Property="BorderBrush" Value="{StaticResource GoodBrush}"/>
+                    <Setter TargetName="lvl" Property="Foreground" Value="{StaticResource GoodBrush}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding LevelText}" Value="CHECK">
+                    <Setter TargetName="fb" Property="BorderBrush" Value="{StaticResource WarnBrush}"/>
+                    <Setter TargetName="lvl" Property="Foreground" Value="{StaticResource WarnBrush}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding HasFix}" Value="False">
+                    <Setter TargetName="fix" Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
     </Window.Resources>
 
     <Grid Margin="20,14,20,10">
@@ -119,6 +151,13 @@
                 <TextBlock x:Name="SubtitleText" Foreground="{StaticResource MutedBrush}" Text="Checking your machine…"/>
             </StackPanel>
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="BtnSysCheck" Style="{StaticResource GhostButton}" Click="BtnSysCheck_Click" Margin="0,0,10,0"
+                        ToolTip="Full hardware and security check: drives, memory, temperatures, power supply, crashes, Windows updates and more">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE95E;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="System check"/>
+                    </StackPanel>
+                </Button>
                 <Button x:Name="BtnTuneUp" Style="{StaticResource AccentButton}" Click="BtnTuneUp_Click" Margin="0,0,10,0"
                         ToolTip="Find and fix what's slowing this PC down">
                     <StackPanel Orientation="Horizontal">
@@ -253,6 +292,90 @@
                                 </ItemsControl.ItemsPanel>
                             </ItemsControl>
                         </ScrollViewer>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- System check -->
+            <TabItem Header="System check" x:Name="CheckTab">
+                <Grid Margin="0,14,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Toolbar -->
+                    <DockPanel Margin="0,0,0,12" LastChildFill="True">
+                        <Button x:Name="BtnChkRun" DockPanel.Dock="Left" Style="{StaticResource AccentButton}" Click="BtnChkRun_Click"
+                                ToolTip="Checks drives, memory, temperatures, fans, power supply, crashes, the clock, devices, Windows updates and security. Changes nothing.">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE95E;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Run full check"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BtnChkSave" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Click="BtnChkSave_Click" Margin="8,0,0,0"
+                                Content="Save report" ToolTip="Saves everything (check results, tests and the hardware inventory) to Documents\Moore PC Mechanic\Reports"/>
+                        <Button x:Name="BtnChkCopy" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Click="BtnChkCopy_Click" Margin="8,0,0,0"
+                                Content="Copy report"/>
+                        <StackPanel VerticalAlignment="Center" Margin="8,0,0,0">
+                            <TextBlock x:Name="ChkStatus" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                                       Text="Click &quot;Run full check&quot;. It only reads; every fix is a separate button."/>
+                            <ProgressBar x:Name="ChkProgress" Margin="0,6,0,0" Visibility="Collapsed" IsIndeterminate="True" MaxWidth="420" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Hands-on tests -->
+                    <Border Grid.Row="1" Style="{StaticResource Panel}" Padding="14,10" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock FontSize="15" FontWeight="SemiBold" Text="Tests for a PC you're bringing back to life"/>
+                            <TextBlock Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,8"
+                                       Text="Order that works: 1) Restart as admin and run the full check. 2) Quick memory test. 3) Power &amp; cooling test (runs everything flat out and watches temperatures and power-supply voltages; if the PC shuts off, the app tells you next time it opens). 4) Full memory test at restart if anything looked off."/>
+                            <WrapPanel>
+                                <Button x:Name="BtnChkMem" Style="{StaticResource GhostButton}" Click="BtnChkMem_Click" Margin="0,0,8,6"
+                                        Content="Quick memory test (1-3 min)" ToolTip="Writes 6 patterns into the free memory and reads them back"/>
+                                <Button x:Name="BtnChkStress" Style="{StaticResource GhostButton}" Click="BtnChkStress_Click" Margin="0,0,8,6"
+                                        Content="Power &amp; cooling test" ToolTip="Full load on the processor (and graphics card) while watching temperatures, clocks, voltages and fans"/>
+                                <TextBlock Text="for" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,6,6"/>
+                                <ComboBox x:Name="ChkLength" Width="100" VerticalAlignment="Center" Margin="0,0,10,6">
+                                    <ComboBoxItem Content="3 minutes"/>
+                                    <ComboBoxItem Content="10 minutes"/>
+                                    <ComboBoxItem Content="30 minutes"/>
+                                </ComboBox>
+                                <CheckBox x:Name="ChkGpu" Content="Include the graphics card" IsChecked="True" Foreground="{StaticResource TextBrush}"
+                                          VerticalAlignment="Center" Margin="0,0,10,6"
+                                          ToolTip="Loads the graphics card too, so the power supply has to deliver close to full power"/>
+                                <Button x:Name="BtnChkStop" Style="{StaticResource AccentButton}" Click="BtnChkStop_Click" Margin="0,0,8,6"
+                                        Content="Stop test" Visibility="Collapsed"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Results: hardware left, security right -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="Hardware" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ChkHwSummary" Foreground="{StaticResource MutedBrush}" Margin="12,0,0,0" VerticalAlignment="Center" Text="not checked yet"/>
+                            </StackPanel>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl x:Name="ChkHwList" ItemTemplate="{StaticResource CheckItemTemplate}"/>
+                            </ScrollViewer>
+                        </DockPanel>
+                        <DockPanel Grid.Column="2">
+                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="Security" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="ChkSecSummary" Foreground="{StaticResource MutedBrush}" Margin="12,0,0,0" VerticalAlignment="Center" Text="not checked yet"/>
+                            </StackPanel>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl x:Name="ChkSecList" ItemTemplate="{StaticResource CheckItemTemplate}"/>
+                            </ScrollViewer>
+                        </DockPanel>
                     </Grid>
                 </Grid>
             </TabItem>
@@ -652,7 +775,7 @@
             </TabItem>
 
             <!-- Drivers -->
-            <TabItem Header="Drivers">
+            <TabItem Header="Drivers" x:Name="DriversTab">
                 <Grid Margin="0,14,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>

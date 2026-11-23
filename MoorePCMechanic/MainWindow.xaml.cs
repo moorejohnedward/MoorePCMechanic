@@ -78,6 +78,7 @@ public partial class MainWindow : Window
         InitBenchmarks();
         InitTuneAuto();
         ShowPauseState();
+        InitSystemCheck();
         _ = CheckForUpdateQuietlyAsync();
         await RunInventoryAsync();
     }
@@ -119,6 +120,8 @@ public partial class MainWindow : Window
     private void Window_Closing(object? sender, CancelEventArgs e)
     {
         _closing = true;
+        _testCts?.Cancel();
+        StressTest.ClearMarker(); // closing the app mid-test isn't the PC going down
         DisposeAudio();
         _cts.Cancel();
         try { _loop?.Wait(2500); } catch { }

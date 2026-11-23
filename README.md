@@ -23,6 +23,10 @@ School/progress record: `DEVLOG.md` and the commit history.
 
 Built for video calls on a wireless headset. **Audio Guard** keeps your chosen headset as the Windows speaker and mic and switches it back if anything changes it. The event log shows device switches and wireless dropouts with times. **Call-ready check** tests everything before a meeting. One-click fixes cover the Windows settings that make sound cut out. Tick **Start with Windows** to keep the guard running all the time.
 
+## System check (v0.7)
+
+**System check** (top of the window) runs a full hardware and security check, made for bringing an old PC back to life: drive health and bad sectors, crashes and sudden power losses, hardware errors, memory, temperatures and fans, power-supply voltages and the CMOS battery, the clock, problem devices, Windows 11 readiness, whether Windows still gets security updates, and risky or outdated software. Then run the **quick memory test** and the **power & cooling test** (full load on the processor and graphics card while it watches temperatures and voltages; if the PC shuts off, the app tells you next time). Run as admin for the full picture. **Save report** keeps it all in one text file.
+
 ## What's in Phase 1 (v0.1)
 
 - **Overview** - live tiles for CPU, GPU, video memory, system memory and the hottest drive, plus a full hardware inventory: exact CPU, motherboard and BIOS, every RAM stick with slot, part number and speed, GPU with VRAM and driver version, drives with health and free space, USB controllers (shows add-in cards), network.

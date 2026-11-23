@@ -41,23 +41,38 @@ public partial class MainWindow
     private async void SecFix_Click(object sender, RoutedEventArgs e)
     {
         if (_secBusy || sender is not Button { Tag: string id }) return;
-        bool needsAdmin = id is not ("coreisolation" or "defender" or "firewall");
-        if (needsAdmin && !EnsureAdminFor("change security settings")) return;
+        var msg = await RunSecurityFixAsync(id);
+        if (msg == null) return;
+        if (!NoRescanFixes.Contains(id)) await SecScanAsync();
+        SecStatus.Text = msg;
+    }
+
+    /// <summary>Fixes that only open a Windows page or start something long; a rescan right after shows nothing new.</summary>
+    private static readonly HashSet<string> NoRescanFixes = new() { "coreisolation", "defender", "firewall", "fullscan", "windowsupdate", "apps" };
+
+    /// <summary>Runs one security fix (asking for admin and confirmation where needed). Returns the result, or null if it didn't run.
+    /// Shared by the Security tab and the System check tab.</summary>
+    private async Task<string?> RunSecurityFixAsync(string id)
+    {
+        bool needsAdmin = id is not ("coreisolation" or "defender" or "firewall" or "windowsupdate" or "apps");
+        if (needsAdmin && !EnsureAdminFor("change security settings")) return null;
         if (id.StartsWith("stopdriver:"))
         {
             var ok = MessageBox.Show(this, $"Stop and remove the driver service \"{id["stopdriver:".Length..]}\"?\n\nThe device or program that uses it stops working until it's reinstalled. A restore point is made first.",
                                      "Remove driver", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
-            if (ok != MessageBoxResult.OK) return;
+            if (ok != MessageBoxResult.OK) return null;
             SetSecBusy(true, "Making a restore point…");
             await Task.Run(() => DriverService.CreateRestorePoint("Moore PC Mechanic: before removing a driver"));
         }
+        if (id == "smb1-off" && MessageBox.Show(this,
+                "Turn off SMB1 file sharing?\n\nOnly very old network drives (NAS) and scanners still need it. If one stops working afterwards, it can be turned back on in \"Turn Windows features on or off\".",
+                "Turn off SMB1", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return null;
         SetSecBusy(true, "Working…");
         string msg;
         try { msg = await Task.Run(() => SecurityService.Fix(id)); }
         catch (Exception ex) { msg = "Couldn't do that: " + ex.Message; }
         SetSecBusy(false, msg);
-        if (id is not ("coreisolation" or "defender" or "firewall" or "fullscan")) await SecScanAsync();
-        SecStatus.Text = msg;
+        return msg;
     }
 
     private async void BtnSecPause_Click(object sender, RoutedEventArgs e)

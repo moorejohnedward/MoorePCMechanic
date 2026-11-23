@@ -30,7 +30,7 @@ public sealed class PauseState
     public string Reason { get; set; } = "";
 }
 
-public static class SecurityService
+public static partial class SecurityService
 {
     private const string HvciKey = @"SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity";
     private const string CiConfigKey = @"SYSTEM\CurrentControlSet\Control\CI\Config";
@@ -202,6 +202,10 @@ public static class SecurityService
             Add(FindingLevel.Good, sac == 1 ? "Smart App Control is on" : "Smart App Control is in evaluation",
                 "It blocks untrusted apps. Note: while it's on, a security pause can't let blocked drivers load, and turning it off can't be undone without resetting Windows.");
 
+        // Windows version, Windows Update, SMB1, Guest account, remote-control apps, out-of-support programs
+        // (SecurityService.System.cs)
+        MoreChecks(Add);
+
         // HP AIO tie-in
         if (KnownIssues.HpAioBiosLock)
             Add(KnownIssues.WindowsUpdateDriversBlocked() ? FindingLevel.Good : FindingLevel.Warning,
@@ -215,6 +219,7 @@ public static class SecurityService
     /// <summary>Runs one of the sweep's fixes. Returns a plain-English result. Most need admin.</summary>
     public static string Fix(string id)
     {
+        if (MoreFix(id) is string more) return more;
         switch (id)
         {
             case "coreisolation": Open("windowsdefender://coreisolation"); return "Opened Core isolation. Click \"Scan again\", then switch Memory integrity on and restart.";
