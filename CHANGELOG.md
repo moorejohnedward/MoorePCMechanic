@@ -1,5 +1,11 @@
 # Changelog - Moore PC Mechanic
 
+## v0.6.0 - Nov 22, 2026 (Security tab)
+- **New Security tab with a one-click security sweep** (changes nothing): Memory integrity, the vulnerable driver blocklist, risky or very old kernel drivers that are running (the usual reason Memory integrity won't turn on), drivers Windows blocked lately, Microsoft Defender (real-time, tamper protection, definitions age, last full scan, unwanted-app blocking, network protection), Secure Boot, TPM, sign-in (LSA) protection, firewall, UAC, Smart App Control, and the HP AIO Windows Update block.
+- **A fix button on each finding:** turn the blocklist back on, remove a risky driver service (restore point first), update Defender, start a full scan, turn on unwanted-app blocking and network protection, block Windows Update drivers on the HP AIO, or jump to the right Windows Security page.
+- **Security pause** for old vendor tools Windows blocks (like HP's AMI BIOS recovery USB maker): makes a restore point, turns off Memory integrity and the vulnerable driver blocklist for 1, 2 or 4 hours, and puts both back exactly as they were when you click "Resume protections now". If you forget, a scheduled task resumes them when time runs out (it also checks at every sign-in). A red banner shows while paused. Refuses to start when Smart App Control is on, since then the pause can't help and turning SAC off is permanent.
+- Pause/resume history is kept in Documents\Moore PC Mechanic\security-history.txt.
+
 ## v0.5.2 - Nov 22, 2026 (HP AIO BIOS lock)
 - **Knows about the HP 24-dd0 All-in-One BIOS problem.** On that AIO (MonkD board, SSID 86F2/86F3) Windows Update pushed a BIOS for the wrong board and left it stuck on "The System BIOS update failed - Unable to open BIOS image file".
 - On those PCs the app never suggests a BIOS update: the "BIOS is over 18 months old" tip is replaced by a warning at the top of Mechanic's notes with the safe options (keep the current BIOS, block Windows Update drivers, recovery stick with Windows + B, RAM/SSD upgrades instead).

@@ -757,6 +757,93 @@
             </TabItem>
 
             <!-- Benchmarks -->
+            <TabItem Header="Security" x:Name="SecurityTab">
+                <Grid Margin="0,14,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Toolbar -->
+                    <DockPanel Margin="0,0,0,12" LastChildFill="True">
+                        <Button x:Name="BtnSecScan" DockPanel.Dock="Left" Style="{StaticResource AccentButton}" Click="BtnSecScan_Click"
+                                ToolTip="Checks Memory integrity, risky drivers, Defender, Secure Boot, TPM, firewall and more. Changes nothing.">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE72E;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="Run security sweep"/>
+                            </StackPanel>
+                        </Button>
+                        <StackPanel VerticalAlignment="Center" Margin="8,0,0,0">
+                            <TextBlock x:Name="SecStatus" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+                                       Text="Click &quot;Run security sweep&quot;. It only reads settings; every fix is a separate button."/>
+                            <ProgressBar x:Name="SecProgress" Margin="0,6,0,0" Visibility="Collapsed" IsIndeterminate="True" MaxWidth="420" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Security pause -->
+                    <Border Grid.Row="1" Style="{StaticResource Panel}" Padding="14,10" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock FontSize="15" FontWeight="SemiBold" Text="Security pause (for old tools that Windows blocks)"/>
+                            <TextBlock Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,8"
+                                       Text="Some old vendor tools, like HP's BIOS recovery USB maker, load a driver Windows now blocks as abusable. A pause turns off Memory integrity and the vulnerable driver blocklist, you restart and run the tool, then click Resume. If you forget, the pause ends by itself when time runs out. A restore point is made first. Won't work while Smart App Control is on."/>
+                            <WrapPanel>
+                                <TextBlock Text="For:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBox x:Name="SecPauseReason" Width="260" Text="HP BIOS recovery USB" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="Ends after" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <ComboBox x:Name="SecPauseLen" Width="90" SelectedIndex="1" VerticalAlignment="Center" Margin="0,0,10,0">
+                                    <ComboBoxItem Content="1 hour"/>
+                                    <ComboBoxItem Content="2 hours"/>
+                                    <ComboBoxItem Content="4 hours"/>
+                                </ComboBox>
+                                <Button x:Name="BtnSecPause" Style="{StaticResource GhostButton}" Click="BtnSecPause_Click" Content="Pause protections" Margin="0,0,8,0"/>
+                                <Button x:Name="BtnSecResume" Style="{StaticResource AccentButton}" Click="BtnSecResume_Click" Content="Resume protections now" Visibility="Collapsed"/>
+                            </WrapPanel>
+                            <TextBlock x:Name="SecPauseState" Margin="0,8,0,0" TextWrapping="Wrap" FontWeight="SemiBold" Visibility="Collapsed"
+                                       Foreground="{StaticResource WarnBrush}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Results -->
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="SecList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border x:Name="fb" Background="{StaticResource PanelAltBrush}" CornerRadius="8" BorderThickness="4,0,0,0"
+                                            BorderBrush="{StaticResource TipBrush}" Padding="12,10" Margin="0,0,0,10">
+                                        <DockPanel LastChildFill="True">
+                                            <Button x:Name="fix" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Margin="12,0,0,0" VerticalAlignment="Center"
+                                                    Content="{Binding FixLabel}" Tag="{Binding FixId}" Click="SecFix_Click"/>
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock x:Name="lvl" Text="{Binding LevelText}" FontSize="11" FontWeight="Bold"
+                                                               Foreground="{StaticResource TipBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding Detail}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding LevelText}" Value="GOOD">
+                                            <Setter TargetName="fb" Property="BorderBrush" Value="{StaticResource GoodBrush}"/>
+                                            <Setter TargetName="lvl" Property="Foreground" Value="{StaticResource GoodBrush}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding LevelText}" Value="CHECK">
+                                            <Setter TargetName="fb" Property="BorderBrush" Value="{StaticResource WarnBrush}"/>
+                                            <Setter TargetName="lvl" Property="Foreground" Value="{StaticResource WarnBrush}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding HasFix}" Value="False">
+                                            <Setter TargetName="fix" Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
+
             <TabItem Header="Benchmarks">
                 <Grid Margin="0,14,0,0">
                     <Grid.RowDefinitions>

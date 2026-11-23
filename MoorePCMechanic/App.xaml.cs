@@ -20,6 +20,24 @@ public partial class App : Application
             return;
         }
 
+        // Security pause ran out (Windows Task Scheduler runs "MoorePCMechanic.exe --resume-security"): no main window.
+        if (e.Args.Contains("--resume-security"))
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            base.OnStartup(e);
+            bool resumed = false;
+            try { resumed = SecurityService.ResumeIfDue(); } catch { }
+            if (resumed)
+            {
+                var r = MessageBox.Show("Your security pause has ended: Memory integrity and the vulnerable driver blocklist are back on.\n\nRestart now to finish? (Save your work first.)",
+                    "Moore PC Mechanic", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                if (r == MessageBoxResult.Yes)
+                    try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("shutdown.exe", "/r /t 5") { CreateNoWindow = true, UseShellExecute = false }); } catch { }
+            }
+            Shutdown();
+            return;
+        }
+
         if (e.Args.Contains("--updated")) UpdateService.CloseOtherCopies(); // older copies still running would keep the old .exe locked
         UpdateService.CleanupAfterUpdate(); // remove the previous version left behind by an update
         base.OnStartup(e);
