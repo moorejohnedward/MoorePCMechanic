@@ -695,7 +695,7 @@ public static class HardwareCheckService
         double sec = Math.Abs(diff.TotalSeconds);
         if (sec <= 120)
         {
-            list.Add(Item(FindingLevel.Good, "Clock is right", $"Within {sec:0} seconds of internet time. Time zone: {zone}."));
+            list.Add(Item(FindingLevel.Good, "Clock is right", $"Within {sec:0} second(s) of internet time. Time zone: {zone}."));
             return;
         }
         string off = sec >= 86400 ? $"{sec / 86400:0.#} days" : sec >= 3600 ? $"{sec / 3600:0.#} hours" : $"{sec / 60:0} minutes";
@@ -718,20 +718,22 @@ public static class HardwareCheckService
             list.Add(Item(FindingLevel.Good, "Every device has a working driver", "Nothing in Device Manager has a yellow warning."));
         else
             list.Add(Item(FindingLevel.Warning, $"{p.Count} device(s) aren't working",
-                string.Join("; ", p.Take(6).Select(d => $"{d.Name}: {d.Meaning}")) + (p.Count > 6 ? $"; and {p.Count - 6} more" : "") +
+                string.Join("; ", p.Take(6).Select(d => $"{d.Name}: {d.Meaning.TrimEnd('.')}")) + (p.Count > 6 ? $"; and {p.Count - 6} more" : "") +
                 ". The Drivers tab can search Windows Update for the missing drivers.", "goto-drivers", "Open Drivers tab"));
     }
 
     private static void Network(List<SecurityItem> list)
     {
         var links = new List<(string Name, ulong Speed, bool Wired)>();
-        using (var s = new ManagementObjectSearcher(@"root\StandardCimv2",
-                   "SELECT Name, InterfaceDescription, Speed, MediaConnectState, PhysicalMediaType FROM MSFT_NetAdapter WHERE ConnectorPresent = TRUE"))
+        // (this provider rejects WHERE on these properties, so filter here)
+        using (var s = new ManagementObjectSearcher(@"root\StandardCimv2", "SELECT * FROM MSFT_NetAdapter"))
             foreach (ManagementBaseObject a in s.Get())
             {
-                if (ToInt(a["MediaConnectState"]) != 1) continue;
-                int pm = ToInt(a["PhysicalMediaType"]);
-                links.Add(($"{a["InterfaceDescription"] ?? a["Name"]}", ToULong(a["Speed"]), pm == 14));
+                object? Prop(string n) { try { return a[n]; } catch { return null; } }
+                if (Prop("ConnectorPresent") as bool? == false || Prop("Virtual") as bool? == true) continue; // virtual adapters (VPNs, Hyper-V)
+                if (ToInt(Prop("MediaConnectState")) != 1) continue;
+                int pm = ToInt(Prop("PhysicalMediaType"));
+                links.Add(($"{Prop("InterfaceDescription") ?? Prop("Name")}", ToULong(Prop("Speed")), pm == 14));
             }
         if (links.Count == 0)
         {

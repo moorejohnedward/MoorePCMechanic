@@ -142,6 +142,6 @@ public static class MemoryTest
                 "1) If XMP/EXPO is on in the BIOS, turn it off and test again. 2) Reseat the sticks. 3) Test one stick at a time to find the bad one, and replace it.",
                 "mdsched", "Full test at restart");
         return HardwareCheckService.Item(FindingLevel.Good, $"Quick memory test passed ({DateTime.Now:HHmm})",
-            $"No errors in {size} of {AppEnv.Bytes(installed)} ({r.Passes} passes, 6 patterns, {time}). The rest was in use by Windows and programs; the full test at restart covers every byte.");
+            $"No errors in {size} of {AppEnv.Bytes(installed)} ({r.Passes} pass{(r.Passes == 1 ? "" : "es")}, 6 patterns each, {time}). The rest was in use by Windows and programs; the full test at restart covers every byte.");
     }
 }

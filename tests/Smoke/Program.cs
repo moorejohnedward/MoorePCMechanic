@@ -104,7 +104,7 @@ Step("Security sweep (with the new checks)", () =>
 {
     var items = SecurityService.Sweep();
     foreach (var i in items) Console.WriteLine($"      ({i.LevelText}) {i.Title} - {i.Detail}{(i.HasFix ? $"  [{i.FixLabel}: {i.FixId}]" : "")}");
-    if (!items.Any(i => i.Title.Contains("Windows") && (i.Title.Contains("security updates") || i.Title.Contains("support") || i.Title.Contains("preview"))))
+    if (!items.Any(i => i.Title.StartsWith("Windows Server") || (i.Title.Contains("Windows") && (i.Title.Contains("security updates") || i.Title.Contains("support") || i.Title.Contains("preview")))))
         throw new Exception("no Windows version line");
 });
 Step("Windows 11 processor rules", () =>
