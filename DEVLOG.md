@@ -132,3 +132,23 @@ All three were fixed. The NVIDIA lookup returned the current driver (621.14) for
 - Concepts: Windows Task Scheduler, headless/command-line modes for GUI apps, least-surprise automation (only unattended-safe actions).
 
 ---
+
+---
+
+## 2026-11-23: v0.7, System check (hardware + security diagnostic)
+
+**Goal:** a full system check for my old PC (32 GB DDR4, dead power supply) when it gets the 650 W supply and comes back to life. One button should answer: are the drives, memory, cooling and power supply healthy, did anything crash, and is the Windows install safe to put back on the internet?
+
+**Built** (`Services/HardwareCheckService.cs`, `Services/SecurityService.System.cs`, `Services/MemoryTest.cs`, `Services/StressTest.cs`, `MainWindow.SystemCheck.cs`)
+- **Drives:** the Windows Storage API (`MSFT_PhysicalDisk`) gives health, media type and bus; its related `MSFT_StorageReliabilityCounter` gives power-on hours, temperature, wear and uncorrected errors (admin). For SATA drives the app also reads raw SMART data (`MSStorageDriver_FailurePredictData`): 512 bytes holding 30 attribute slots of 12 bytes. Attribute 5 is reallocated sectors, 197 pending, 198 offline-uncorrectable, 9 power-on hours, 194 temperature. The raw value is 6 little-endian bytes. SMART entries are matched to drives by normalizing the model names. `MSFT_Partition.IsBoot` tells which drive holds Windows.
+- **Event log:** `EventLogReader` with XPath queries (`timediff(@SystemTime)`) for drive errors (disk, Ntfs, storahci, stornvme), WHEA hardware errors, blue screens (event 1001, stop code pulled from the text and translated), Kernel-Power 41 (lost power without shutting down) and the Windows Memory Diagnostic result.
+- **Sensors:** LibreHardwareMonitor's motherboard voltages are matched to the +12 V, +5 V and +3.3 V rails and the CMOS battery by name. A value far from the rail's nominal voltage means the board's scaling is unknown, so it's ignored instead of reported as a failure. The ATX standard allows ±5%.
+- **Clock:** compares the PC clock with the `Date` header from Microsoft's connectivity-test page. It's plain HTTP on purpose, because a wrong clock breaks HTTPS certificate checks.
+- **Windows 11 readiness:** `GetFirmwareType` (kernel32) for UEFI vs legacy BIOS, `Win32_Tpm` for TPM 2.0, and a rule-based processor check (Intel Core 8th gen+, AMD Ryzen 2000 Zen+ and newer) with unit tests in the smoke test.
+- **Security additions:** a table of Windows builds and their end-of-updates dates (24 months for Home/Pro, 36 for Enterprise/Education), Windows Update history through the Update Agent COM API (`QueryHistory`), SMB1 via its driver service, the Guest account by its well-known SID ending in -501, and installed programs read from the Uninstall registry keys (64-bit, 32-bit and per-user views).
+- **Quick memory test:** allocates 256 MB blocks of unmanaged memory (`NativeMemory.AlignedAlloc`) up to 75% of free memory, then writes and verifies six patterns in parallel: zeros, ones, two checkerboards, each word's own address (catches address-line faults), and xorshift pseudo-random data that is regenerated from the same seed to verify.
+- **Power & cooling test:** one thread per logical processor running `Vector<double>` multiply-adds plus integer xorshift, and the Direct3D compute shader from the GPU benchmark in a loop. Sensors are sampled every second. Throttling = clock at the end vs the first 20 seconds. A marker file is written before the load starts; if the app finds it at the next start and Windows has booted since the test began (boot time from `Environment.TickCount64`), the PC went down under load.
+
+**Concepts:** S.M.A.R.T. and binary parsing, WMI associations (`GetRelated`), Windows event log XPath, hardware error architecture (WHEA), bug check codes, ATX power-supply tolerances, HTTP date headers, firmware types (UEFI vs BIOS), TPM, software lifecycle data, memory-test pattern design, stress testing and crash detection across restarts.
+- **AMD Radeon** (`Services/AmdGpuService.cs`): AMD has no public per-card driver lookup like NVIDIA's, and splits cards across driver branches, so the app reads what's installed instead of guessing download links. AMD's installer writes the Adrenalin release into the display adapter's class key (`HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-...}\000N`, value `RadeonSoftwareVersion`), matched to the card by `DriverDesc`. The card name decides the branch (RX 5000+ current, RX 400/500 and Vega older, HD/R7/R9 legacy), with unit tests in the smoke test. Updating is handed to AMD Software: Adrenalin Edition or AMD's Auto-Detect tool.
+

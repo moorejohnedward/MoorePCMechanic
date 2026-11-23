@@ -80,6 +80,86 @@ Step("Automatic tune-up (headless) + schedule", () =>
     if (TuneUpService.GetSchedule().On) throw new Exception("schedule not removed");
 });
 
+// ---- v0.7: System check ----
+List<SensorReading> SensorsNow()
+{
+    using var sens = new SensorService();
+    sens.Read(); Thread.Sleep(1200);
+    return sens.Read();
+}
+var readings = new List<SensorReading>();
+Step("Sensors for the system check", () =>
+{
+    readings = SensorsNow();
+    Console.WriteLine($"      {readings.Count} readings; CPU temp={HardwareCheckService.CpuTemp(readings)} 12V={HardwareCheckService.RailVolts(readings, HardwareCheckService.Rail.V12)}");
+});
+Step("Hardware check", () =>
+{
+    var items = HardwareCheckService.Check(readings, new Progress<string>(m => Console.WriteLine("      .. " + m)));
+    foreach (var i in items) Console.WriteLine($"      ({i.LevelText}) {i.Title} - {i.Detail}{(i.HasFix ? $"  [{i.FixLabel}: {i.FixId}]" : "")}");
+    if (items.Count < 8) throw new Exception("too few hardware checks");
+    if (items.Any(i => i.Title.Contains("couldn't check"))) throw new Exception("a check crashed (see above)");
+});
+Step("Security sweep (with the new checks)", () =>
+{
+    var items = SecurityService.Sweep();
+    foreach (var i in items) Console.WriteLine($"      ({i.LevelText}) {i.Title} - {i.Detail}{(i.HasFix ? $"  [{i.FixLabel}: {i.FixId}]" : "")}");
+    if (!items.Any(i => i.Title.StartsWith("Windows Server") || (i.Title.Contains("Windows") && (i.Title.Contains("security updates") || i.Title.Contains("support") || i.Title.Contains("preview")))))
+        throw new Exception("no Windows version line");
+});
+Step("Windows 11 processor rules", () =>
+{
+    var cases = new (string Cpu, bool? Ok)[]
+    {
+        ("Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz", false), ("Intel(R) Core(TM) i5-8400 CPU @ 2.80GHz", true),
+        ("Intel(R) Core(TM) i7-10700 CPU @ 2.90GHz", true), ("11th Gen Intel(R) Core(TM) i5-1135G7 @ 2.40GHz", true),
+        ("Intel(R) Core(TM) i7-920 CPU @ 2.67GHz", false), ("AMD Ryzen 7 1700 Eight-Core Processor", false),
+        ("AMD Ryzen 5 2400G with Radeon Vega Graphics", false), ("AMD Ryzen 5 2600 Six-Core Processor", true),
+        ("AMD Ryzen 5 8400F 6-Core Processor", true), ("AMD FX(tm)-8350 Eight-Core Processor", null),
+    };
+    foreach (var (cpu, ok) in cases)
+    {
+        var (got, why) = HardwareCheckService.Win11Cpu(cpu);
+        Console.WriteLine($"      {cpu} -> {got} ({why})");
+        if (got != ok) throw new Exception($"{cpu}: expected {ok}, got {got}");
+    }
+});
+Step("AMD Radeon rules + detection", () =>
+{
+    var cases = new (string Gpu, string Gen)[]
+    {
+        ("AMD Radeon RX 7800 XT", "current"), ("AMD Radeon RX 6600", "current"), ("AMD Radeon RX 5700 XT", "current"),
+        ("Radeon RX 580 Series", "older"), ("Radeon RX 570", "older"), ("Radeon RX Vega 64", "older"), ("AMD Radeon VII", "older"),
+        ("AMD Radeon R9 200 Series", "legacy"), ("AMD Radeon HD 7900 Series", "legacy"), ("AMD Radeon R7 Graphics", "legacy"),
+        ("AMD Radeon(TM) Graphics", "current"),
+    };
+    foreach (var (gpu, gen) in cases)
+    {
+        var got = AmdGpuService.Generation(gpu);
+        Console.WriteLine($"      {gpu} -> {got}");
+        if (got != gen) throw new Exception($"{gpu}: expected {gen}, got {got}");
+    }
+    var d = AmdGpuService.Describe(new AmdGpu { Name = "Radeon RX 580 Series", WinVersion = "31.0.21921.1000", Adrenalin = "24.9.1", DriverDate = DateTime.Today.AddDays(-500), Generation = "older" });
+    Console.WriteLine($"      describe: ({d.Level}) {d.Title} - {d.Detail}");
+    Console.WriteLine($"      AMD adapters on this machine: {AmdGpuService.Find().Count}");
+});
+Step("Quick memory test (512 MB, 1 pass)", () =>
+{
+    var r = MemoryTest.Run(1, new Progress<string>(_ => { }), CancellationToken.None, 512L << 20);
+    Console.WriteLine($"      tested {AppEnv.Bytes(r.BytesTested)}, errors {r.Errors}, {r.Elapsed.TotalSeconds:0.0}s, note={r.Note}");
+    var item = MemoryTest.ToItem(r);
+    Console.WriteLine($"      ({item.LevelText}) {item.Title} - {item.Detail}");
+    if (r.Note == null && (r.BytesTested == 0 || r.Errors != 0)) throw new Exception("memory test failed");
+});
+Step("Power & cooling test (20 s, with GPU) + crash marker", () =>
+{
+    using var sens = new SensorService();
+    var items = StressTest.Run(TimeSpan.FromSeconds(20), true, () => sens.Read(), new Progress<string>(m => Console.WriteLine("      .. " + m)), CancellationToken.None);
+    foreach (var i in items) Console.WriteLine($"      ({i.LevelText}) {i.Title} - {i.Detail}");
+    if (!items.Any(i => i.Title.StartsWith("PC stayed up"))) throw new Exception("test didn't complete");
+    if (StressTest.CheckInterrupted() != null) throw new Exception("marker left behind after a finished test");
+});
+
 var progress = new Progress<(double, string)>(p => Console.WriteLine($"      .. {p.Item2}"));
 var drive = BenchmarkService.TestableDrives().FirstOrDefault();
 Console.WriteLine("Drives: " + string.Join(", ", BenchmarkService.TestableDrives().Select(d => d.Text)));

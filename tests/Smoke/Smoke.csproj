@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Smoke test run on GitHub's Windows servers: exercises the driver and benchmark code without the window. -->
+  <!-- Smoke test run on GitHub's Windows servers: exercises the driver, benchmark, tune-up and system-check code without the window. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -17,7 +17,17 @@
     <Compile Include="..\..\MoorePCMechanic\Services\Temp.cs" />
     <Compile Include="..\..\MoorePCMechanic\Services\TuneUpService.cs" />
     <Compile Include="..\..\MoorePCMechanic\ViewModels\ObservableBase.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\SensorService.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\InventoryService.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\KnownIssues.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\SecurityService.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\SecurityService.System.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\HardwareCheckService.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\MemoryTest.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\StressTest.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\AmdGpuService.cs" />
     <PackageReference Include="System.Management" Version="10.0.15" />
+    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
     <PackageReference Include="Vortice.Direct3D11" Version="3.8.3" />
     <PackageReference Include="Vortice.D3DCompiler" Version="3.8.3" />
   </ItemGroup>
