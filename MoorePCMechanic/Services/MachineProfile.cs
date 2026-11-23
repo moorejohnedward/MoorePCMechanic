@@ -8,6 +8,7 @@
 //   - GPU scheduling is only offered where there's a separate graphics card.
 //   - On ARM, x64 programs run through emulation, so the app points those out.
 
+using System.IO;
 using System.Management;
 using System.Runtime.InteropServices;
 

@@ -6,6 +6,7 @@
 //   arm          advice on ARM PCs: which startup apps run through x64 emulation
 // Everything here is recorded in the tune-up's undo file and put back by "Undo last tune-up".
 
+using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
 
