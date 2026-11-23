@@ -746,8 +746,9 @@ public static class HardwareCheckService
             DateTime? date = null;
             try { if (o["DriverDate"] is string dd) date = ManagementDateTimeConverter.ToDateTime(dd); } catch { }
             string ver = o["DriverVersion"] as string ?? "";
-            int age = date is DateTime d ? (int)(DateTime.Today - d.Date).TotalDays : -1;
-            string when = date is DateTime d2 ? $", from {d2:MMM d, yyyy}" : "";
+            // Windows' own inbox drivers carry a placeholder 2006 date, so their age means nothing
+            int age = date is DateTime d && d.Year > 2006 ? (int)(DateTime.Today - d.Date).TotalDays : -1;
+            string when = date is DateTime d2 && d2.Year > 2006 ? $", from {d2:MMM d, yyyy}" : "";
             if (name.Contains("Basic Display", StringComparison.OrdinalIgnoreCase) || name.Contains("Basic Render", StringComparison.OrdinalIgnoreCase))
                 list.Add(Item(FindingLevel.Warning, "Graphics card has no driver",
                     $"Windows is using its basic display driver ({name}): no proper resolution, slow video and no GPU acceleration. The Drivers tab can find the right one.", "goto-drivers", "Open Drivers tab"));
