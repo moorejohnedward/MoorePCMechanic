@@ -23,3 +23,6 @@ jobs:
 
       - name: Build
         run: dotnet build MoorePCMechanic/MoorePCMechanic.csproj -c Release
+
+      - name: Build for ARM64 (Snapdragon / Windows on ARM)
+        run: dotnet build MoorePCMechanic/MoorePCMechanic.csproj -c Release -r win-arm64

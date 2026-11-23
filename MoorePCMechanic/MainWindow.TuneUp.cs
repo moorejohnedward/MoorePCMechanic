@@ -67,42 +67,62 @@ public partial class MainWindow
         if (status != null) TuneStatus.Text = status;
     }
 
-    /// <summary>Header button: jump to the Tune-up tab and scan.</summary>
+    /// <summary>Header button: jump to the Tune-up tab, scan, and go straight to applying the best settings
+    /// for this PC (one confirmation, restore point first, undoable).</summary>
     private async void BtnTuneUp_Click(object sender, RoutedEventArgs e)
     {
         Tabs.SelectedItem = TuneTab;
-        await TuneScanAsync();
+        if (!await TuneScanAsync()) return;
+        bool anything = _tuneItems.Any(i => i.Selected && i.CanFix) || _startupApps.Any(s => s.Enabled != s.WasEnabled);
+        if (!anything) { TuneStatus.Text = (_tuneProfile?.Summary + " ").TrimStart() + "Already tuned: nothing to change."; return; }
+        await TuneApplyAsync();
     }
 
     private async void BtnTuneScan_Click(object sender, RoutedEventArgs e) => await TuneScanAsync();
 
-    private async Task TuneScanAsync()
+    private MachineProfile? _tuneProfile;
+    private int _startupTrimmed;
+
+    /// <summary>Scans; returns false if it couldn't.</summary>
+    private async Task<bool> TuneScanAsync()
     {
-        if (_tuneBusy) return;
-        SetTuneBusy(true, "Checking power settings, junk files, SSDs and startup apps…");
+        if (_tuneBusy) return false;
+        SetTuneBusy(true, "Checking what kind of PC this is, power settings, memory, junk files, SSDs and startup apps…");
         try
         {
             // hottest drive from the live sensors (°C; null if unknown)
             var hot = _lastReadings.Where(r => r.RootType == HardwareType.Storage && r.Type == SensorType.Temperature && r.Value is float f && f > 0)
                                    .OrderByDescending(r => r.Value).FirstOrDefault();
-            var (items, startup) = await Task.Run(() => (TuneUpService.Scan(hot?.Value, hot?.Hardware), TuneUpService.StartupApps()));
+            var (profile, items, startup) = await Task.Run(() =>
+            {
+                var pc = MachineProfile.Detect();
+                return (pc, TuneUpService.Scan(hot?.Value, hot?.Hardware, pc), TuneUpService.StartupApps());
+            });
+            _tuneProfile = profile;
+            _startupTrimmed = TuneUpService.SuggestStartupTrim(startup, profile);
             _tuneItems = items.OrderByDescending(i => i.NeedsFix).ThenBy(i => i.CanFix ? 0 : 1).ToList();
             _startupApps = startup;
             TuneList.ItemsSource = _tuneItems;
             StartupGrid.ItemsSource = _startupApps;
             int fixable = _tuneItems.Count(i => i.NeedsFix && i.CanFix);
             int advice = _tuneItems.Count(i => i.NeedsFix && !i.CanFix);
-            SetTuneBusy(false, (fixable == 0 ? "Nothing to fix automatically." : $"{fixable} thing(s) can be improved; they're ticked.") +
+            SetTuneBusy(false, profile.Summary + " " +
+                               (fixable == 0 ? "Nothing to fix automatically." : $"{fixable} thing(s) can be improved; they're ticked.") +
+                               (_startupTrimmed > 0 ? $" {_startupTrimmed} startup app(s) unticked." : "") +
                                (advice > 0 ? $" {advice} piece(s) of advice (blue) need you to act." : "") +
                                " Untick anything you'd rather leave, then click \"Tune & optimize\".");
+            return true;
         }
         catch (Exception ex)
         {
             SetTuneBusy(false, "Scan failed: " + ex.Message);
+            return false;
         }
     }
 
-    private async void BtnTuneApply_Click(object sender, RoutedEventArgs e)
+    private async void BtnTuneApply_Click(object sender, RoutedEventArgs e) => await TuneApplyAsync();
+
+    private async Task TuneApplyAsync()
     {
         StartupGrid.CommitEdit(DataGridEditingUnit.Row, true);
         var chosen = _tuneItems.Where(i => i.Selected && i.CanFix).ToList();
@@ -111,8 +131,13 @@ public partial class MainWindow
         if (!EnsureAdminFor("change power, graphics and startup settings")) return;
 
         var lines = chosen.Select(i => "• " + i.Title).ToList();
-        if (startupChanges > 0) lines.Add($"• {startupChanges} startup app change(s)");
+        var turnedOff = _startupApps.Where(s => s.WasEnabled && !s.Enabled).Select(s => s.Name).ToList();
+        if (turnedOff.Count > 0)
+            lines.Add($"• Stop {turnedOff.Count} app(s) starting with Windows: " + string.Join(", ", turnedOff.Take(12)) + (turnedOff.Count > 12 ? ", …" : ""));
+        int turnedOn = startupChanges - turnedOff.Count;
+        if (turnedOn > 0) lines.Add($"• Start {turnedOn} app(s) with Windows again");
         var ok = MessageBox.Show(this,
+            (_tuneProfile != null ? _tuneProfile.Summary + "\n\n" : "") +
             "Apply these changes?\n\n" + string.Join("\n", lines) +
             "\n\nA System Restore point is made first, and \"Undo last tune-up\" can put the settings back.",
             "Tune & optimize", MessageBoxButton.OKCancel, MessageBoxImage.Question);
@@ -129,7 +154,7 @@ public partial class MainWindow
             }
             var progress = new Progress<string>(s => TuneStatus.Text = s);
             bool restart = await Task.Run(() => TuneUpService.Apply(chosen, _startupApps, progress));
-            SetTuneBusy(false, "Tune-up done." + (restart ? " Restart the PC to finish (graphics scheduling)." : "") +
+            SetTuneBusy(false, "Tune-up done." + (restart ? " Restart the PC to finish." : "") +
                                " Run a benchmark to see the difference.");
             if (restart && MessageBox.Show(this, "Restart now to finish the tune-up?\n\nSave your work in other programs first.",
                                            "Restart", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)

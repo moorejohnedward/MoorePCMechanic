@@ -27,12 +27,16 @@ public sealed class SensorService : IDisposable
 
     public SensorService()
     {
+        // On an ARM processor (native ARM64 build), LibreHardwareMonitor's CPU and motherboard readers run
+        // Intel/AMD-only instructions and port I/O, so they're left off there; the rest works.
+        bool x86 = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture
+                   is System.Runtime.InteropServices.Architecture.X64 or System.Runtime.InteropServices.Architecture.X86;
         _computer = new Computer
         {
-            IsCpuEnabled = true,
+            IsCpuEnabled = x86,
             IsGpuEnabled = true,
             IsMemoryEnabled = true,
-            IsMotherboardEnabled = true,
+            IsMotherboardEnabled = x86,
             IsControllerEnabled = true,
             IsStorageEnabled = true,
             IsNetworkEnabled = true,

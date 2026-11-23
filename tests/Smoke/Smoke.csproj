@@ -16,6 +16,8 @@
     <Compile Include="..\..\MoorePCMechanic\Services\GpuBenchmark.cs" />
     <Compile Include="..\..\MoorePCMechanic\Services\Temp.cs" />
     <Compile Include="..\..\MoorePCMechanic\Services\TuneUpService.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\TuneUpService.Machine.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\MachineProfile.cs" />
     <Compile Include="..\..\MoorePCMechanic\ViewModels\ObservableBase.cs" />
     <Compile Include="..\..\MoorePCMechanic\Services\SensorService.cs" />
     <Compile Include="..\..\MoorePCMechanic\Services\InventoryService.cs" />

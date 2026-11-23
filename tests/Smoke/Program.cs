@@ -47,6 +47,14 @@ Step("Windows Update driver search", () =>
     Console.WriteLine($"      {t.Result.Count} update(s): " + string.Join(" | ", t.Result.Take(3).Select(u => u.Title)));
 });
 
+Step("Machine profile", () =>
+{
+    var pc = MachineProfile.Detect();
+    Console.WriteLine($"      {pc.Summary} powerModes={pc.UsesPowerModes} modernStandby={pc.ModernStandby} battery={pc.HasBattery} arm={pc.IsArm64}");
+    var notepad = Path.Combine(Environment.SystemDirectory, "notepad.exe");
+    Console.WriteLine($"      notepad.exe is {MachineProfile.ExeArchitecture(notepad)}");
+    if (MachineProfile.ExeArchitecture(notepad) == MachineProfile.ExeArch.Unknown) throw new Exception("couldn't read a PE header");
+});
 Step("Tune-up scan", () =>
 {
     var items = TuneUpService.Scan(84f, "Samsung SSD 980 PRO 1TB");
