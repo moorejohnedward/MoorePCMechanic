@@ -433,6 +433,11 @@ public partial class MainWindow : Window
             _findings.Insert(0, new Finding(FindingLevel.Tip, "Limited mode",
                 "Click \"Restart as admin\" (top right) to see CPU temperature, fan speeds, voltages and drive health."));
         }
+        else if (!cpuTemp && System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.Arm64)
+        {
+            _findings.Insert(0, new Finding(FindingLevel.Tip, "CPU temperature not available on ARM",
+                "This PC has an ARM processor (like Snapdragon). The PawnIO sensor driver only works on Intel and AMD processors, so the CPU temperature can't be read here. Drive, battery and graphics readings still work where Windows reports them."));
+        }
         else if (!cpuTemp)
         {
             _findings.Insert(0, new Finding(FindingLevel.Tip, "CPU temperature not available yet",

@@ -1,5 +1,21 @@
 # Changelog - Moore PC Mechanic
 
+## v0.7.1 - Nov 23, 2026 (Tune-up fits each PC, and ARM support)
+- **The Tune up button now does the whole job.** It scans, then goes straight to "Apply these changes?" with everything picked for this PC. One OK, a restore point first, and "Undo last tune-up" still puts it all back.
+- **Knows what kind of PC it's on** (shown at the top of the results): desktop, desktop with a graphics card, laptop, ARM PC, how much RAM, how many threads. It picks the fixes to match:
+  - **Classic desktops:** High performance power plan, as before.
+  - **Laptops, ARM PCs and Modern Standby PCs:** Windows hides that plan there, so it sets the power mode to **Best performance** while plugged in instead. Battery settings are left alone.
+  - **GPU scheduling** is only offered when there's a separate graphics card.
+  - **Every PC:** memory compression turned back on if something turned it off (and the SysMain service it needs).
+- **Light PCs (8 GB or less, or 4 threads or fewer, like the HP AIO)** also get:
+  - **Lighter visual effects:** no animations, fades, shadows or see-through panels, but smooth fonts and picture thumbnails are kept.
+  - **Edge:** tabs sleep after 5 minutes, efficiency mode on, no preloading at startup or running after it's closed. Set as recommendations, so you can still change them in Edge.
+  - **Startup trim:** unticks every startup app except security, sync (Tailscale, Google Drive, OneDrive, Dropbox), hardware drivers and the Moore apps. The confirmation lists them by name.
+- **ARM PCs (Snapdragon / Windows on ARM):**
+  - Each release now includes a native **MoorePCMechanic-arm64.exe**. On an ARM PC, "Check for updates" installs it, including on a copy that's running the x64 build under emulation now.
+  - The tune-up lists startup apps that run through x64 emulation and says which common apps have ARM64 versions.
+  - The CPU and motherboard sensors are left off in the ARM64 build (they use Intel/AMD-only instructions), and the "Turn on CPU temperature" (PawnIO) tip is replaced with an explanation, since PawnIO only works on Intel and AMD.
+
 ## v0.7.0 - Nov 23, 2026 (System check: hardware + security diagnostic)
 - **New System check tab and header button.** One click runs a full hardware and security check side by side, built for bringing an old PC back to life. It only reads; every fix is its own button.
 - **Hardware:** every drive's health (Windows' verdict, SMART failure prediction, bad and unreadable sectors, power-on hours, temperature, SSD wear, and a tip when Windows runs from a spinning hard drive), drive errors Windows logged in the last 30 days, hardware errors (WHEA) and blue screens with plain-English stop codes, sudden power losses, memory (matched set? all of it usable?) and the last Windows Memory Diagnostic result, temperatures and fans at rest, power-supply rails (+12 V, +5 V, +3.3 V against the ATX ±5% limits) and the CMOS battery, whether the clock is right (a dead CMOS battery makes old PCs wake up with the wrong date), problem devices, the network link speed, and on Windows 10, whether the PC can take Windows 11 (processor, TPM 2.0, UEFI/Secure Boot, memory, drive size).

@@ -14,6 +14,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,8 +36,12 @@ public static class UpdateService
     // GitHub account and repo the app updates from. (github.com/moorejohnedward/moorepcmechanic)
     public const string GitHubOwner = "moorejohnedward";
     public const string GitHubRepo = "moorepcmechanic";
-    private const string ExeAssetName = "MoorePCMechanic.exe";
-    private const string ShaAssetName = "MoorePCMechanic.exe.sha256";
+    private const string X64AssetName = "MoorePCMechanic.exe";
+    private const string Arm64AssetName = "MoorePCMechanic-arm64.exe";
+    // ARM PCs (Snapdragon etc.) get the native ARM64 build - including a copy that's running the x64 build
+    // under emulation, so it moves itself over on the next update. Falls back to x64 if a release has no ARM64 build.
+    private static bool WantArm64 => RuntimeInformation.OSArchitecture == Architecture.Arm64;
+    private static string ExeAssetName => WantArm64 ? Arm64AssetName : X64AssetName;
     // ---------------------------------------------------------------------
 
     private static readonly HttpClient Http = CreateClient();
@@ -116,15 +121,18 @@ public static class UpdateService
 
         string? exeUrl = null, shaUrl = null;
         long size = 0;
-        foreach (var a in root.GetProperty("assets").EnumerateArray())
+        var assets = root.GetProperty("assets").EnumerateArray().ToList();
+        string want = assets.Any(a => string.Equals(a.GetProperty("name").GetString(), ExeAssetName, StringComparison.OrdinalIgnoreCase))
+            ? ExeAssetName : X64AssetName;
+        foreach (var a in assets)
         {
             var name = a.GetProperty("name").GetString();
-            if (string.Equals(name, ExeAssetName, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(name, want, StringComparison.OrdinalIgnoreCase))
             {
                 exeUrl = a.GetProperty("browser_download_url").GetString();
                 size = a.GetProperty("size").GetInt64();
             }
-            else if (string.Equals(name, ShaAssetName, StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(name, want + ".sha256", StringComparison.OrdinalIgnoreCase))
             {
                 shaUrl = a.GetProperty("browser_download_url").GetString();
             }

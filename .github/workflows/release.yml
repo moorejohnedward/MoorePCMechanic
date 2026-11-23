@@ -1,5 +1,5 @@
 # Release: whenever main gets a new <Version> in MoorePCMechanic.csproj,
-# GitHub builds MoorePCMechanic.exe on Windows and posts it as a Release
+# GitHub builds MoorePCMechanic.exe (x64) and MoorePCMechanic-arm64.exe (ARM) and posts them as a Release
 # (tag vX.Y.Z). The app's "Check for updates" button downloads from the
 # newest Release. Pushes that don't change the version are skipped.
 name: Release
@@ -54,12 +54,21 @@ jobs:
           -p:PublishProfile=FolderProfile
           -p:PublishDir=${{ github.workspace }}/out/
 
-      - name: Fingerprint (SHA-256) for the updater's safety check
+      - name: Publish ARM64 exe (Snapdragon / Windows on ARM PCs)
         if: steps.ver.outputs.skip == 'false'
         shell: pwsh
         run: |
-          $h = (Get-FileHash out/MoorePCMechanic.exe -Algorithm SHA256).Hash.ToLower()
-          "$h  MoorePCMechanic.exe" | Out-File -Encoding ascii out/MoorePCMechanic.exe.sha256
+          dotnet publish MoorePCMechanic/MoorePCMechanic.csproj -p:PublishProfile=FolderProfile -r win-arm64 -p:RuntimeIdentifier=win-arm64 "-p:PublishDir=${{ github.workspace }}/out-arm64/"
+          Move-Item out-arm64/MoorePCMechanic.exe out/MoorePCMechanic-arm64.exe
+
+      - name: Fingerprints (SHA-256) for the updater's safety check
+        if: steps.ver.outputs.skip == 'false'
+        shell: pwsh
+        run: |
+          foreach ($f in 'MoorePCMechanic.exe', 'MoorePCMechanic-arm64.exe') {
+            $h = (Get-FileHash "out/$f" -Algorithm SHA256).Hash.ToLower()
+            "$h  $f" | Out-File -Encoding ascii "out/$f.sha256"
+          }
 
       - name: Release notes from CHANGELOG.md
         if: steps.ver.outputs.skip == 'false'
@@ -80,6 +89,7 @@ jobs:
         run: >
           gh release create "v${{ steps.ver.outputs.version }}"
           out/MoorePCMechanic.exe out/MoorePCMechanic.exe.sha256
+          out/MoorePCMechanic-arm64.exe out/MoorePCMechanic-arm64.exe.sha256
           --target "${{ github.sha }}"
           --title "Moore PC Mechanic ${{ steps.ver.outputs.version }}"
           --notes-file notes.md
