@@ -786,7 +786,7 @@
                     <!-- Toolbar -->
                     <DockPanel Margin="0,0,0,12" LastChildFill="True">
                         <Button x:Name="BtnDrvScan" DockPanel.Dock="Left" Style="{StaticResource AccentButton}" Click="BtnDrvScan_Click"
-                                ToolTip="List drivers, find problem devices and ask Windows Update and NVIDIA for newer drivers">
+                                ToolTip="List drivers, find problem devices, ask Windows Update and NVIDIA for newer drivers, and check AMD Radeon drivers">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE721;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                 <TextBlock Text="Check for driver updates"/>
@@ -806,7 +806,7 @@
                         </StackPanel>
                     </DockPanel>
 
-                    <!-- NVIDIA + problem devices -->
+                    <!-- NVIDIA, AMD + problem devices -->
                     <StackPanel Grid.Row="1">
                         <Border x:Name="NvPanel" Style="{StaticResource Panel}" Margin="0,0,0,12" Visibility="Collapsed">
                             <DockPanel LastChildFill="True">
@@ -824,6 +824,28 @@
                                     <TextBlock x:Name="NvTitle" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap"/>
                                     <TextBlock x:Name="NvDetail" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,0"/>
                                     <ProgressBar x:Name="NvProgress" Margin="0,8,0,0" Visibility="Collapsed" Maximum="1" MaxWidth="420" HorizontalAlignment="Left"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <Border x:Name="AmdPanel" Style="{StaticResource Panel}" Margin="0,0,0,12" Visibility="Collapsed">
+                            <DockPanel LastChildFill="True">
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                                    <Button x:Name="BtnAmdApp" Style="{StaticResource AccentButton}" Click="BtnAmdApp_Click" Margin="0,0,8,0"
+                                            ToolTip="Opens AMD Software: Adrenalin Edition. Its System page checks AMD for the right driver for this exact card.">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE896;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                            <TextBlock x:Name="BtnAmdAppText" Text="Open AMD Software"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button x:Name="BtnAmdPage" Style="{StaticResource GhostButton}" Click="BtnAmdPage_Click"
+                                            Content="AMD's driver installer"
+                                            ToolTip="Opens AMD's official drivers page. Its Auto-Detect and Install tool installs AMD Software and the right driver for your card."/>
+                                </StackPanel>
+                                <TextBlock Text="&#xE7F4;" FontFamily="{StaticResource IconFont}" FontSize="20" Foreground="#ED1C24"
+                                           VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock x:Name="AmdTitle" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                    <TextBlock x:Name="AmdDetail" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </DockPanel>
                         </Border>

@@ -124,6 +124,25 @@ Step("Windows 11 processor rules", () =>
         if (got != ok) throw new Exception($"{cpu}: expected {ok}, got {got}");
     }
 });
+Step("AMD Radeon rules + detection", () =>
+{
+    var cases = new (string Gpu, string Gen)[]
+    {
+        ("AMD Radeon RX 7800 XT", "current"), ("AMD Radeon RX 6600", "current"), ("AMD Radeon RX 5700 XT", "current"),
+        ("Radeon RX 580 Series", "older"), ("Radeon RX 570", "older"), ("Radeon RX Vega 64", "older"), ("AMD Radeon VII", "older"),
+        ("AMD Radeon R9 200 Series", "legacy"), ("AMD Radeon HD 7900 Series", "legacy"), ("AMD Radeon R7 Graphics", "legacy"),
+        ("AMD Radeon(TM) Graphics", "current"),
+    };
+    foreach (var (gpu, gen) in cases)
+    {
+        var got = AmdGpuService.Generation(gpu);
+        Console.WriteLine($"      {gpu} -> {got}");
+        if (got != gen) throw new Exception($"{gpu}: expected {gen}, got {got}");
+    }
+    var d = AmdGpuService.Describe(new AmdGpu { Name = "Radeon RX 580 Series", WinVersion = "31.0.21921.1000", Adrenalin = "24.9.1", DriverDate = DateTime.Today.AddDays(-500), Generation = "older" });
+    Console.WriteLine($"      describe: ({d.Level}) {d.Title} - {d.Detail}");
+    Console.WriteLine($"      AMD adapters on this machine: {AmdGpuService.Find().Count}");
+});
 Step("Quick memory test (512 MB, 1 pass)", () =>
 {
     var r = MemoryTest.Run(1, new Progress<string>(_ => { }), CancellationToken.None, 512L << 20);

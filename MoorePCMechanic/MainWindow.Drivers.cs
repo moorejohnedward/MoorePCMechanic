@@ -4,12 +4,13 @@ using MoorePCMechanic.Services;
 
 namespace MoorePCMechanic;
 
-/// <summary>Drivers tab: installed drivers, problem devices, Windows Update driver updates and the NVIDIA driver.</summary>
+/// <summary>Drivers tab: installed drivers, problem devices, Windows Update driver updates, the NVIDIA driver and AMD Radeon.</summary>
 public partial class MainWindow
 {
     private List<DriverInfo> _drivers = new();
     private List<DriverUpdate> _wuUpdates = new();
     private NvidiaStatus? _nvidia;
+    private List<AmdGpu> _amd = new();
     private bool _drvBusy;
 
     private void SetDrvBusy(bool busy, string? status = null)
@@ -46,6 +47,8 @@ public partial class MainWindow
 
             _nvidia = await nvTask;
             ShowNvidia();
+            _amd = await Task.Run(() => { try { return AmdGpuService.Find(); } catch { return new List<AmdGpu>(); } });
+            ShowAmd();
 
             var (updates, wuError) = await wuTask;
             int blockedFw = KnownIssues.HpAioBiosLock ? updates.RemoveAll(KnownIssues.IsBiosOrFirmware) : 0;
@@ -58,6 +61,7 @@ public partial class MainWindow
             if (wuError != null) parts.Add("Windows Update didn't answer: " + wuError);
             else parts.Add(_wuUpdates.Count == 0 ? "Windows Update has no driver updates for this PC." : $"Windows Update has {_wuUpdates.Count} driver update(s).");
             if (_nvidia?.UpdateAvailable == true) parts.Add($"NVIDIA {_nvidia.LatestVersion} is available.");
+            if (_amd.Count > 0) parts.Add(_amd[0].Adrenalin != null ? $"AMD: Adrenalin {_amd[0].Adrenalin} installed." : "AMD: Adrenalin isn't installed.");
             if (KnownIssues.HpAioBiosLock)
                 parts.Add(blockedFw > 0
                     ? $"Hid {blockedFw} BIOS/firmware update(s): this HP AIO must not get BIOS updates."
@@ -252,5 +256,40 @@ public partial class MainWindow
         {
             SetDrvBusy(false);
         }
+    }
+
+    // ---------------------------------------------------------------------
+    //  AMD Radeon (AMD's own tools do the updating; see AmdGpuService)
+    // ---------------------------------------------------------------------
+
+    private void ShowAmd()
+    {
+        if (_amd.Count == 0) { AmdPanel.Visibility = Visibility.Collapsed; return; }
+        AmdPanel.Visibility = Visibility.Visible;
+        var g = _amd[0];
+        var (_, title, detail) = AmdGpuService.Describe(g);
+        AmdTitle.Text = title;
+        AmdDetail.Text = detail + (_amd.Count > 1 ? $"  Also found: {string.Join(", ", _amd.Skip(1).Select(x => x.Name + (x.Adrenalin != null ? $" (Adrenalin {x.Adrenalin})" : "")))}." : "");
+        BtnAmdApp.Visibility = g.AppPath != null ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void BtnAmdApp_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            AmdGpuService.OpenApp(_amd.First());
+            DrvStatus.Text = "Opened AMD Software. Go to System (or the gear icon) > Check for updates. Afterwards, click \"Check for driver updates\" here to see the new version.";
+        }
+        catch (Exception ex) { DrvStatus.Text = "Couldn't open AMD Software: " + ex.Message; }
+    }
+
+    private void BtnAmdPage_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            AmdGpuService.OpenDriversPage();
+            DrvStatus.Text = "Opened AMD's drivers page. Under Auto-Detect and Install, click \"Download Windows Drivers\" and run it; it installs AMD Software and the right driver for your card.";
+        }
+        catch (Exception ex) { DrvStatus.Text = "Couldn't open the page: " + ex.Message; }
     }
 }

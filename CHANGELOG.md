@@ -7,6 +7,8 @@
 - **Quick memory test:** borrows most of the free memory and checks it with 6 patterns, twice (1-3 minutes). **Full test at restart** starts Windows Memory Diagnostic for every byte.
 - **Power & cooling test (3, 10 or 30 minutes):** runs the processor and graphics card flat out while watching temperatures, throttling, power-supply voltages and the CPU fan. If the PC shuts off or restarts during the test, the app says so the next time it opens.
 - **New fixes:** set the clock from the internet, turn the Windows Update service back on, turn off SMB1 and the Guest account, open Windows Update / Installed apps / the Drivers tab, start Windows Memory Diagnostic, get Microsoft's PC Health Check.
+- **AMD Radeon support.** The Drivers tab now shows AMD graphics (a Radeon card and/or Ryzen built-in graphics): the installed AMD Software: Adrenalin Edition version, the Windows driver version and date, and which AMD driver branch the card is on (current, older Polaris/Vega cards that get fewer updates, or legacy cards AMD no longer updates). **Open AMD Software** launches the Adrenalin app to check for updates; if it isn't installed, **AMD's driver installer** opens AMD's Auto-Detect and Install page. AMD has no public lookup like NVIDIA's, so AMD's own tools pick the right driver for the exact card.
+- The System check also lists every graphics driver (AMD, NVIDIA, Intel) with its age, and flags Windows' basic display driver (no real graphics driver installed).
 - **Copy / Save report** puts the check, the test results and the full hardware inventory in one text file (Documents\Moore PC Mechanic\Reports).
 - Includes the v0.6.0 Security tab (it hadn't been released yet).
 
