@@ -724,7 +724,7 @@ public static class HardwareCheckService
 
     private static void Network(List<SecurityItem> list)
     {
-        var links = new List<(string Name, ulong Speed, bool Wired)>();
+        var links = new List<(string Name, ulong Speed, bool Wired, string Kind)>();
         // (this provider rejects WHERE on these properties, so filter here)
         using (var s = new ManagementObjectSearcher(@"root\StandardCimv2", "SELECT * FROM MSFT_NetAdapter"))
             foreach (ManagementBaseObject a in s.Get())
@@ -733,7 +733,7 @@ public static class HardwareCheckService
                 if (Prop("ConnectorPresent") as bool? == false || Prop("Virtual") as bool? == true) continue; // virtual adapters (VPNs, Hyper-V)
                 if (ToInt(Prop("MediaConnectState")) != 1) continue;
                 int pm = ToInt(Prop("PhysicalMediaType"));
-                links.Add(($"{Prop("InterfaceDescription") ?? Prop("Name")}", ToULong(Prop("Speed")), pm == 14));
+                links.Add(($"{Prop("InterfaceDescription") ?? Prop("Name")}", ToULong(Prop("Speed")), pm == 14, pm switch { 14 => "wired", 1 or 9 => "Wi-Fi", 10 => "Bluetooth", _ => "link" }));
             }
         if (links.Count == 0)
         {
@@ -742,7 +742,7 @@ public static class HardwareCheckService
         }
         static string Mbps(ulong bps) => bps >= 1_000_000_000 ? $"{bps / 1e9:0.#} Gbps" : $"{bps / 1e6:0} Mbps";
         var slowWired = links.Where(l => l.Wired && l.Speed > 0 && l.Speed < 1_000_000_000).ToList();
-        string text = string.Join("; ", links.Select(l => $"{l.Name}: {(l.Wired ? "wired" : "wireless")}, {Mbps(l.Speed)}"));
+        string text = string.Join("; ", links.Select(l => $"{l.Name}: {l.Kind}, {Mbps(l.Speed)}"));
         if (slowWired.Count > 0)
             list.Add(Item(FindingLevel.Tip, $"Wired network is only running at {Mbps(slowWired[0].Speed)}",
                 text + ". A gigabit port stuck at 100 Mbps almost always means a damaged or old cable (it needs all 8 wires: Cat5e or newer) or a 100 Mbps port on the other end."));
