@@ -194,10 +194,15 @@ public static class InventoryService
             if (rel != null)
             {
                 sec.Add("BIOS date", rel.Value.ToString("MMM d, yyyy"));
-                if ((DateTime.Now - rel.Value).TotalDays > 540)
+                if (!KnownIssues.HpAioBiosLock && (DateTime.Now - rel.Value).TotalDays > 540)
                     r.Findings.Add(new Finding(FindingLevel.Tip, "BIOS is over 18 months old",
                         "Newer BIOS versions often improve memory compatibility and stability. Check your board maker's support page before upgrading RAM."));
             }
+        }
+        if (KnownIssues.HpAioBiosLock)
+        {
+            sec.Add("Known issue", "HP 24-dd0 AIO - BIOS updates blocked (see Mechanic's notes)");
+            r.Findings.Insert(0, new Finding(FindingLevel.Warning, KnownIssues.HpAioTitle, KnownIssues.HpAioDetail));
         }
         r.Sections.Add(sec);
     }

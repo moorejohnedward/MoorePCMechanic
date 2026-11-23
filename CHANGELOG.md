@@ -1,5 +1,10 @@
 # Changelog - Moore PC Mechanic
 
+## v0.5.2 - Nov 22, 2026 (HP AIO BIOS lock)
+- **Knows about the HP 24-dd0 All-in-One BIOS problem.** On that AIO (MonkD board, SSID 86F2/86F3) Windows Update pushed a BIOS for the wrong board and left it stuck on "The System BIOS update failed - Unable to open BIOS image file".
+- On those PCs the app never suggests a BIOS update: the "BIOS is over 18 months old" tip is replaced by a warning at the top of Mechanic's notes with the safe options (keep the current BIOS, block Windows Update drivers, recovery stick with Windows + B, RAM/SSD upgrades instead).
+- The Drivers tab hides BIOS and firmware updates from Windows Update there, and offers to turn on "Do not include drivers with Windows Updates".
+
 ## v0.5.1 - Nov 13, 2026 (Automatic tune-up)
 - **Tune up automatically every week.** On the Tune-up tab, tick "Tune up automatically every…" and pick a day and time (24-hour clock, default Sunday 0300). Windows Task Scheduler then runs the safe fixes with no window: power plan, Game Mode, junk cleanup and SSD re-TRIM. If the PC was off or asleep at that time, it runs soon after it's back on.
 - The automatic run never restarts the PC, empties the Recycle Bin, changes startup apps or touches GPU scheduling. Anything that needs you is listed for the next time you open the Tune-up tab.

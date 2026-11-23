@@ -48,6 +48,7 @@ public partial class MainWindow
             ShowNvidia();
 
             var (updates, wuError) = await wuTask;
+            int blockedFw = KnownIssues.HpAioBiosLock ? updates.RemoveAll(KnownIssues.IsBiosOrFirmware) : 0;
             _wuUpdates = updates;
             WuGrid.ItemsSource = _wuUpdates;
             WuPanel.Visibility = _wuUpdates.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -57,13 +58,39 @@ public partial class MainWindow
             if (wuError != null) parts.Add("Windows Update didn't answer: " + wuError);
             else parts.Add(_wuUpdates.Count == 0 ? "Windows Update has no driver updates for this PC." : $"Windows Update has {_wuUpdates.Count} driver update(s).");
             if (_nvidia?.UpdateAvailable == true) parts.Add($"NVIDIA {_nvidia.LatestVersion} is available.");
+            if (KnownIssues.HpAioBiosLock)
+                parts.Add(blockedFw > 0
+                    ? $"Hid {blockedFw} BIOS/firmware update(s): this HP AIO must not get BIOS updates."
+                    : "BIOS/firmware updates are blocked on this HP AIO.");
             SetDrvBusy(false, string.Join("  ", parts));
+            OfferHpAioDriverBlock();
             BtnDrvInstallText.Text = _wuUpdates.Count > 0 ? $"Download & install ({_wuUpdates.Count(u => u.Selected)})" : "Download & install";
         }
         catch (Exception ex)
         {
             SetDrvBusy(false, "Driver scan failed: " + ex.Message);
         }
+    }
+
+    /// <summary>On the HP 24-dd0 AIO, offer once per session to stop Windows Update pushing drivers/firmware (that's what bricked it).</summary>
+    private bool _hpAioAsked;
+    private void OfferHpAioDriverBlock()
+    {
+        if (!KnownIssues.HpAioBiosLock || _hpAioAsked || KnownIssues.WindowsUpdateDriversBlocked()) return;
+        _hpAioAsked = true;
+        var ask = MessageBox.Show(this,
+            "This HP All-in-One got stuck in a BIOS update loop after Windows Update pushed a BIOS meant for a different board.\n\n" +
+            "Turn on \"Do not include drivers with Windows Updates\" so Windows can't do that again?\n\n" +
+            "Windows security updates still install as normal. You can still install drivers here on the Drivers tab (BIOS updates stay hidden).",
+            "Protect this HP AIO", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (ask != MessageBoxResult.Yes) return;
+        if (!EnsureAdminFor("stop Windows Update from installing drivers")) return;
+        try
+        {
+            KnownIssues.BlockWindowsUpdateDrivers();
+            DrvStatus.Text = "Done: Windows Update will no longer install drivers or BIOS updates on this PC.";
+        }
+        catch (Exception ex) { DrvStatus.Text = "Couldn't change the Windows Update setting: " + ex.Message; }
     }
 
     private void ApplyDriverFilter()
