@@ -1,5 +1,8 @@
 # Changelog - Moore PC Mechanic
 
+## v0.7.2 - Nov 24, 2026 (Default browser)
+- **Make Google Chrome the default browser** (Tune-up tab, under the automatic tune-up). Shows which browser opens links now. One click opens Windows' Default apps page straight to Google Chrome; click **Set default** there and the app confirms the change within a few seconds. (Windows 10 and 11 don't let any program switch the default browser by itself, so this is the one click Windows requires.) If Chrome isn't installed, the button opens Google's Chrome download page instead.
+
 ## v0.7.1 - Nov 23, 2026 (Tune-up fits each PC, and ARM support)
 - **The Tune up button now does the whole job.** It scans, then goes straight to "Apply these changes?" with everything picked for this PC. One OK, a restore point first, and "Undo last tune-up" still puts it all back.
 - **Knows what kind of PC it's on** (shown at the top of the results): desktop, desktop with a graphics card, laptop, ARM PC, how much RAM, how many threads. It picks the fixes to match:

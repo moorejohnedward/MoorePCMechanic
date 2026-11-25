@@ -77,6 +77,7 @@ public partial class MainWindow : Window
         InitAudio();
         InitBenchmarks();
         InitTuneAuto();
+        ShowDefaultBrowser();
         ShowPauseState();
         InitSystemCheck();
         _ = CheckForUpdateQuietlyAsync();

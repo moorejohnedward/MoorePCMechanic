@@ -28,6 +28,7 @@
     <Compile Include="..\..\MoorePCMechanic\Services\MemoryTest.cs" />
     <Compile Include="..\..\MoorePCMechanic\Services\StressTest.cs" />
     <Compile Include="..\..\MoorePCMechanic\Services\AmdGpuService.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\DefaultBrowserService.cs" />
     <PackageReference Include="System.Management" Version="10.0.15" />
     <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
     <PackageReference Include="Vortice.Direct3D11" Version="3.8.3" />

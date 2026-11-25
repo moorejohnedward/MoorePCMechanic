@@ -151,6 +151,10 @@ Step("AMD Radeon rules + detection", () =>
     Console.WriteLine($"      describe: ({d.Level}) {d.Title} - {d.Detail}");
     Console.WriteLine($"      AMD adapters on this machine: {AmdGpuService.Find().Count}");
 });
+Step("Default browser", () =>
+{
+    Console.WriteLine($"      default: {DefaultBrowserService.CurrentName()} ({DefaultBrowserService.CurrentProgId()}), Chrome default: {DefaultBrowserService.ChromeIsDefault()}, chrome.exe: {DefaultBrowserService.ChromePath()}");
+});
 Step("Quick memory test (512 MB, 1 pass)", () =>
 {
     var r = MemoryTest.Run(1, new Progress<string>(_ => { }), CancellationToken.None, 512L << 20);
