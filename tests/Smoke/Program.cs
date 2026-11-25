@@ -47,6 +47,14 @@ Step("Windows Update driver search", () =>
     Console.WriteLine($"      {t.Result.Count} update(s): " + string.Join(" | ", t.Result.Take(3).Select(u => u.Title)));
 });
 
+Step("Machine profile", () =>
+{
+    var pc = MachineProfile.Detect();
+    Console.WriteLine($"      {pc.Summary} powerModes={pc.UsesPowerModes} modernStandby={pc.ModernStandby} battery={pc.HasBattery} arm={pc.IsArm64}");
+    var notepad = Path.Combine(Environment.SystemDirectory, "notepad.exe");
+    Console.WriteLine($"      notepad.exe is {MachineProfile.ExeArchitecture(notepad)}");
+    if (MachineProfile.ExeArchitecture(notepad) == MachineProfile.ExeArch.Unknown) throw new Exception("couldn't read a PE header");
+});
 Step("Tune-up scan", () =>
 {
     var items = TuneUpService.Scan(84f, "Samsung SSD 980 PRO 1TB");
@@ -142,6 +150,10 @@ Step("AMD Radeon rules + detection", () =>
     var d = AmdGpuService.Describe(new AmdGpu { Name = "Radeon RX 580 Series", WinVersion = "31.0.21921.1000", Adrenalin = "24.9.1", DriverDate = DateTime.Today.AddDays(-500), Generation = "older" });
     Console.WriteLine($"      describe: ({d.Level}) {d.Title} - {d.Detail}");
     Console.WriteLine($"      AMD adapters on this machine: {AmdGpuService.Find().Count}");
+});
+Step("Default browser", () =>
+{
+    Console.WriteLine($"      default: {DefaultBrowserService.CurrentName()} ({DefaultBrowserService.CurrentProgId()}), Chrome default: {DefaultBrowserService.ChromeIsDefault()}, chrome.exe: {DefaultBrowserService.ChromePath()}");
 });
 Step("Quick memory test (512 MB, 1 pass)", () =>
 {

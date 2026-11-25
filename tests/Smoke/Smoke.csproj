@@ -16,6 +16,8 @@
     <Compile Include="..\..\MoorePCMechanic\Services\GpuBenchmark.cs" />
     <Compile Include="..\..\MoorePCMechanic\Services\Temp.cs" />
     <Compile Include="..\..\MoorePCMechanic\Services\TuneUpService.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\TuneUpService.Machine.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\MachineProfile.cs" />
     <Compile Include="..\..\MoorePCMechanic\ViewModels\ObservableBase.cs" />
     <Compile Include="..\..\MoorePCMechanic\Services\SensorService.cs" />
     <Compile Include="..\..\MoorePCMechanic\Services\InventoryService.cs" />
@@ -26,6 +28,7 @@
     <Compile Include="..\..\MoorePCMechanic\Services\MemoryTest.cs" />
     <Compile Include="..\..\MoorePCMechanic\Services\StressTest.cs" />
     <Compile Include="..\..\MoorePCMechanic\Services\AmdGpuService.cs" />
+    <Compile Include="..\..\MoorePCMechanic\Services\DefaultBrowserService.cs" />
     <PackageReference Include="System.Management" Version="10.0.15" />
     <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
     <PackageReference Include="Vortice.Direct3D11" Version="3.8.3" />

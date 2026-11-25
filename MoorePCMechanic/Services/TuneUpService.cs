@@ -66,9 +66,26 @@ public sealed class TuneUndo
     public bool HagsChanged { get; set; }
     public int? HagsBefore { get; set; }
     public List<string> StartupDisabled { get; set; } = new();  // "hive|keyPath|name"
+
+    // per-machine extras (see TuneUpService.Machine.cs)
+    public string? PowerModeBefore { get; set; }
+    public bool MemoryCompressionTurnedOn { get; set; }
+    public bool SysMainWasDisabled { get; set; }
+    public Dictionary<string, int> VisualBefore { get; set; } = new();   // SystemParametersInfo settings
+    public List<RegBefore> RegistryBefore { get; set; } = new();
 }
 
-public static class TuneUpService
+/// <summary>A registry DWORD as it was before the tune-up (Existed = false means it wasn't there).</summary>
+public sealed class RegBefore
+{
+    public string Hive { get; set; } = "";
+    public string Path { get; set; } = "";
+    public string Name { get; set; } = "";
+    public bool Existed { get; set; }
+    public int Value { get; set; }
+}
+
+public static partial class TuneUpService
 {
     public const string HighPerformance = "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c";
     public const string Balanced = "381b4222-f694-41f0-9685-ff5bb260df2e";
@@ -81,19 +98,27 @@ public static class TuneUpService
     // =====================================================================
 
     /// <param name="hottestDriveC">Hottest drive temperature from the sensors, °C (null if unknown).</param>
-    public static List<TuneItem> Scan(float? hottestDriveC, string? hottestDriveName)
+    public static List<TuneItem> Scan(float? hottestDriveC, string? hottestDriveName, MachineProfile? profile = null)
     {
         var items = new List<TuneItem>();
+        var pc = profile ?? MachineProfile.Detect();
 
-        // ---- power plan
-        var (guid, name) = ActivePowerScheme();
-        bool fast = guid is HighPerformance or UltimatePerformance;
-        items.Add(new TuneItem
+        // ---- power: plan on classic desktops, power mode on laptops / ARM / Modern Standby PCs
+        if (pc.UsesPowerModes)
         {
-            Id = "power", Title = "Power plan: full speed",
-            Why = "On a desktop plugged into power (and your UPS), \"High performance\" stops the processor dropping into slow power-saving states between bursts, so apps respond faster. Costs a few watts at idle.",
-            State = name ?? "Unknown", NeedsFix = !fast, Selected = !fast,
-        });
+            items.Add(PowerModeItem(pc));
+        }
+        else
+        {
+            var (guid, name) = ActivePowerScheme();
+            bool fast = guid is HighPerformance or UltimatePerformance;
+            items.Add(new TuneItem
+            {
+                Id = "power", Title = "Power plan: full speed",
+                Why = "On a desktop plugged into power, \"High performance\" stops the processor dropping into slow power-saving states between bursts, so apps respond faster. Costs a few watts at idle.",
+                State = name ?? "Unknown", NeedsFix = !fast, Selected = !fast,
+            });
+        }
 
         // ---- game mode (also helps video calls: Windows prioritizes the app in front)
         int? gm = ReadDword(Registry.CurrentUser, @"Software\Microsoft\GameBar", "AutoGameModeEnabled");
@@ -108,12 +133,13 @@ public static class TuneUpService
         // ---- hardware-accelerated GPU scheduling
         int? hags = ReadDword(Registry.LocalMachine, @"SYSTEM\CurrentControlSet\Control\GraphicsDrivers", "HwSchMode");
         bool hagsOn = hags == 2;
-        items.Add(new TuneItem
-        {
-            Id = "hags", Title = "Graphics card schedules its own work",
-            Why = "Hardware-accelerated GPU scheduling lets the RTX card manage its own queue, which lowers lag in games, video and AI apps. Takes effect after a restart.",
-            State = hagsOn ? "On" : "Off", NeedsFix = !hagsOn, Selected = !hagsOn, RestartNeeded = true,
-        });
+        if (pc.DiscreteGpu)
+            items.Add(new TuneItem
+            {
+                Id = "hags", Title = "Graphics card schedules its own work",
+                Why = $"Hardware-accelerated GPU scheduling lets the graphics card ({pc.GpuName}) manage its own queue, which lowers lag in games, video and AI apps. Takes effect after a restart.",
+                State = hagsOn ? "On" : "Off", NeedsFix = !hagsOn, Selected = !hagsOn, RestartNeeded = true,
+            });
 
         // ---- junk files
         long junk = JunkTargets().Sum(t => FolderSize(t.Path, t.MinAge));
@@ -148,7 +174,8 @@ public static class TuneUpService
         items.Add(new TuneItem
         {
             Id = "startup", Title = "Apps that start with Windows", CanFix = false,
-            Why = "Each one slows startup and runs in the background. Untick the ones you don't need in the list below; changes apply with the tune-up and can be undone.",
+            Why = "Each one slows startup and runs in the background. Untick the ones you don't need in the list below; changes apply with the tune-up and can be undone." +
+                  (pc.IsLight ? " On this light PC, everything except security, sync (Tailscale, Google Drive, OneDrive), hardware drivers and Moore apps is unticked for you." : ""),
             State = $"{enabled} turned on", NeedsFix = enabled > 8,
         });
 
@@ -178,6 +205,9 @@ public static class TuneUpService
                 State = $"{hottestDriveName}: {Temp.Full(t, "0")}", NeedsFix = t >= 70,
             });
         }
+
+        // ---- per-machine extras: memory compression, lighter visuals, Edge, ARM emulation
+        AddMachineItems(items, pc, startup);
 
         // ---- restart pending
         bool reboot = RebootPending();
@@ -242,6 +272,9 @@ public static class TuneUpService
                         var (code, _) = Run("defrag.exe", "/C /L /U", 600); // /L = re-TRIM every SSD volume (HDDs are skipped)
                         it.Result = code == 0 ? "Done" : "Finished (some volumes skipped)";
                         break;
+                    default:
+                        restart |= ApplyMachineItem(it, undo);
+                        break;
                 }
             }
             catch (Exception ex)
@@ -305,6 +338,7 @@ public static class TuneUpService
             catch { }
         }
         if (u.StartupDisabled.Count > 0) done.Add($"{u.StartupDisabled.Count} startup app(s)");
+        UndoMachineItems(u, done);
         try { File.Delete(UndoFile); } catch { }
         return done.Count == 0 ? "Nothing to put back." : "Put back: " + string.Join(", ", done) + ".";
     }
@@ -317,8 +351,8 @@ public static class TuneUpService
     private static string HistoryFile => Path.Combine(AppEnv.DataFolder, "tuneup-history.txt");
 
     /// <summary>
-    /// What the scheduled run does, with no window: the safe, no-restart fixes only (power plan, Game Mode,
-    /// junk cleanup, SSD re-TRIM). It never empties the Recycle Bin, changes startup apps or GPU scheduling,
+    /// What the scheduled run does, with no window: the safe, no-restart fixes only (power plan or power mode,
+    /// Game Mode, junk cleanup, SSD re-TRIM, memory compression - which waits for your next restart). It never empties the Recycle Bin, changes startup apps or GPU scheduling,
     /// or restarts the PC. Results go to tuneup-history.txt and show in the app next time it opens.
     /// </summary>
     public static void RunAutomatic()
@@ -330,7 +364,7 @@ public static class TuneUpService
             var (rpOk, rpMsg) = DriverService.CreateRestorePoint("Moore PC Mechanic: automatic tune-up");
             var items = Scan(null, null);
             foreach (var i in items)
-                i.Selected = i.Id == "trim" || (i.NeedsFix && i.Id is "power" or "gamemode" or "junk");
+                i.Selected = i.Id == "trim" || (i.NeedsFix && i.Id is "power" or "powermode" or "gamemode" or "junk" or "memcompress");
             Apply(items, new List<StartupApp>(), new Progress<string>(_ => { }));
             foreach (var i in items.Where(i => i.Selected)) log.Add(i.Title + ": " + i.Result);
             var advice = items.Where(i => i.NeedsFix && (!i.CanFix || i.Id is "hags" or "recycle")).Select(i => i.Title).ToList();
