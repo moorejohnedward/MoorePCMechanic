@@ -170,7 +170,7 @@ public partial class MainWindow
         if (id == "goto-drivers") { Tabs.SelectedItem = DriversTab; return; }
 
         string? msg;
-        if (id is "mdsched" or "clock-sync" or "pchealth")
+        if (id is "mdsched" or "clock-sync" or "pchealth" or "amd-app" or "amd-page")
         {
             if (id == "clock-sync" && !EnsureAdminFor("set the clock")) return;
             if (id == "mdsched" && MessageBox.Show(this,
@@ -183,7 +183,7 @@ public partial class MainWindow
         else msg = await RunSecurityFixAsync(id);
 
         if (msg == null) return;
-        if (id is "clock-sync" || (!NoRescanFixes.Contains(id) && id is not ("mdsched" or "pchealth"))) await RunSystemCheckAsync();
+        if (id is "clock-sync" || (!NoRescanFixes.Contains(id) && id is not ("mdsched" or "pchealth" or "amd-app" or "amd-page"))) await RunSystemCheckAsync();
         ChkStatus.Text = msg;
     }
 

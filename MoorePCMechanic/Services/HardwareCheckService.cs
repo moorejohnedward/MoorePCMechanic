@@ -45,6 +45,7 @@ public static class HardwareCheckService
         Step("Fans", () => Fans(list, readings, admin));
         Step("Power supply", () => PowerRails(list, readings, admin));
         Step("Clock", () => Clock(list, readings));
+        Step("Graphics drivers", () => GraphicsDrivers(list));
         Step("Devices", () => Devices(list));
         Step("Network", () => Network(list));
         if (Environment.OSVersion.Version.Build < 22000)
@@ -75,6 +76,13 @@ public static class HardwareCheckService
                     (code, output) = TuneUpService.Run("w32tm.exe", "/resync /force", 60);
                 }
                 return code == 0 ? "Clock set from Microsoft's time server." : "Couldn't set the clock: " + output.Trim();
+            case "amd-app":
+                var g = AmdGpuService.Find().FirstOrDefault();
+                if (g != null) AmdGpuService.OpenApp(g); else AmdGpuService.OpenDriversPage();
+                return "Opened AMD Software. Go to System (or the gear icon) > Check for updates.";
+            case "amd-page":
+                AmdGpuService.OpenDriversPage();
+                return "Opened AMD's drivers page. Click \"Download Windows Drivers\" under Auto-Detect and Install; it installs AMD Software and the right driver for your card.";
             case "pchealth":
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://aka.ms/GetPCHealthCheckApp") { UseShellExecute = true });
                 return "Opened the download for Microsoft's PC Health Check (the official Windows 11 check).";
@@ -720,6 +728,37 @@ public static class HardwareCheckService
             list.Add(Item(FindingLevel.Warning, $"{p.Count} device(s) aren't working",
                 string.Join("; ", p.Take(6).Select(d => $"{d.Name}: {d.Meaning.TrimEnd('.')}")) + (p.Count > 6 ? $"; and {p.Count - 6} more" : "") +
                 ". The Drivers tab can search Windows Update for the missing drivers.", "goto-drivers", "Open Drivers tab"));
+    }
+
+    private static void GraphicsDrivers(List<SecurityItem> list)
+    {
+        var amd = AmdGpuService.Find();
+        foreach (var g in amd)
+        {
+            var (level, title, detail) = AmdGpuService.Describe(g);
+            list.Add(Item(level, title, detail, g.AppPath != null ? "amd-app" : "amd-page", g.AppPath != null ? "Open AMD Software" : "Get AMD's installer"));
+        }
+        using var s = new ManagementObjectSearcher("SELECT Name, DriverVersion, DriverDate FROM Win32_VideoController");
+        foreach (ManagementBaseObject o in s.Get())
+        {
+            var name = (o["Name"] as string ?? "").Trim();
+            if (amd.Any(a => a.Name == name)) continue;
+            DateTime? date = null;
+            try { if (o["DriverDate"] is string dd) date = ManagementDateTimeConverter.ToDateTime(dd); } catch { }
+            string ver = o["DriverVersion"] as string ?? "";
+            // Windows' own inbox drivers carry a placeholder 2006 date, so their age means nothing
+            int age = date is DateTime d && d.Year > 2006 ? (int)(DateTime.Today - d.Date).TotalDays : -1;
+            string when = date is DateTime d2 && d2.Year > 2006 ? $", from {d2:MMM d, yyyy}" : "";
+            if (name.Contains("Basic Display", StringComparison.OrdinalIgnoreCase) || name.Contains("Basic Render", StringComparison.OrdinalIgnoreCase))
+                list.Add(Item(FindingLevel.Warning, "Graphics card has no driver",
+                    $"Windows is using its basic display driver ({name}): no proper resolution, slow video and no GPU acceleration. The Drivers tab can find the right one.", "goto-drivers", "Open Drivers tab"));
+            else if (name.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase))
+                list.Add(Item(age > 180 ? FindingLevel.Tip : FindingLevel.Good, $"{name}: driver {DriverService.NvidiaVersionFromWindows(ver)}{(age > 180 ? $" is {age / 30} months old" : "")}",
+                    $"NVIDIA driver {DriverService.NvidiaVersionFromWindows(ver)}{when}. The Drivers tab checks NVIDIA for a newer one and installs it with one click.", age > 180 ? "goto-drivers" : null, "Open Drivers tab"));
+            else if (name.Length > 0)
+                list.Add(Item(age > 365 ? FindingLevel.Tip : FindingLevel.Good, $"{name}: driver {ver}",
+                    $"Driver {ver}{when}." + (age > 365 ? " Over a year old: the Drivers tab can look for a newer one." : ""), age > 365 ? "goto-drivers" : null, "Open Drivers tab"));
+        }
     }
 
     private static void Network(List<SecurityItem> list)
